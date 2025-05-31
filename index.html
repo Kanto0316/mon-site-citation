@@ -84,7 +84,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>📝 Bloc-note partagé</h2>
+    <h2>📝 Bloc Note</h2>
     <textarea id="noteInput" placeholder="Écris une note ici..."></textarea>
     <button onclick="ajouterNote()">Ajouter</button>
     <div id="notesList"></div>
@@ -157,7 +157,7 @@
           <div class="note-actions">
             <button onclick="modifierNote('${doc.id}', \`${data.texte.replace(/`/g, "\\`")}\`)">✏️ Modifier</button>
             <button onclick="supprimerNote('${doc.id}')">🗑️ Supprimer</button>
-            <button onclick="supprimerToutesNotes()">❌ Supprimer toutes</button>
+            <button onclick="supprimerToutesNotes()">❌ Supprimer tout</button>
           </div>
         `;
 
