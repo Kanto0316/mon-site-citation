@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Discussion</title>
+  <title>Discussion avec Réactions</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -59,11 +59,12 @@
       padding: 12px 18px;
       margin: 8px 0;
       border-radius: 20px;
-      max-width: 50%;
+      max-width: 80%;
       word-wrap: break-word;
       position: relative;
       cursor: pointer;
       transition: all 0.3s ease;
+      display: inline-block;
     }
 
     .me {
@@ -89,6 +90,32 @@
       font-size: 0.8em;
       color: #555;
       margin-top: 5px;
+    }
+
+    .reactions {
+      margin-top: 8px;
+      display: flex;
+      gap: 10px;
+      font-size: 1.2em;
+      user-select: none;
+    }
+
+    .reaction {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .reaction span.count {
+      margin-left: 4px;
+      font-size: 0.9em;
+      color: #333;
+    }
+
+    .reaction.user-reacted {
+      background-color: rgba(0,0,0,0.1);
+      border-radius: 12px;
+      padding: 2px 6px;
     }
 
     .input-area {
@@ -164,13 +191,17 @@
     const messageInput = document.getElementById("messageInput");
     const messagesSelectionnes = new Set();
 
+    // Liste d'emojis disponibles
+    const emojiList = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+
     function envoyerMessage() {
       const texte = messageInput.value.trim();
       if (texte !== "") {
         db.collection("messages").add({
           texte: texte,
           date: firebase.firestore.Timestamp.now(),
-          auteur: username
+          auteur: username,
+          reactions: {} // Nouvelle propriété pour stocker les réactions
         });
         messageInput.value = "";
       }
@@ -186,6 +217,7 @@
           const minute = String(dateObj.getMinutes()).padStart(2, '0');
           const heureFormatee = `${heure}:${minute}`;
 
+          // Conteneur message
           const div = document.createElement("div");
           const classe = (data.auteur === username) ? "me" : "other";
           div.className = `message ${classe}`;
@@ -193,11 +225,34 @@
             div.classList.add("selected");
           }
 
+          // Contenu du message
           div.innerHTML = `
             <div><strong>${data.auteur}</strong><br>${data.texte}</div>
             <div class="time">${heureFormatee}</div>
           `;
 
+          // Ajout de la zone des réactions
+          const reactionsDiv = document.createElement("div");
+          reactionsDiv.className = "reactions";
+
+          // Pour chaque emoji, afficher l'emoji et le nombre de réactions
+          emojiList.forEach(emoji => {
+            const reactionCount = (data.reactions && data.reactions[emoji]) ? data.reactions[emoji].length : 0;
+            const userReacted = data.reactions && data.reactions[emoji] && data.reactions[emoji].includes(username);
+
+            const reactionSpan = document.createElement("div");
+            reactionSpan.className = "reaction" + (userReacted ? " user-reacted" : "");
+            reactionSpan.innerHTML = `${emoji} <span class='count'>${reactionCount}</span>`;
+            reactionSpan.onclick = (e) => {
+              e.stopPropagation(); // Empêche la sélection du message
+              toggleReaction(doc.id, emoji, data);
+            };
+            reactionsDiv.appendChild(reactionSpan);
+          });
+
+          div.appendChild(reactionsDiv);
+
+          // Sélection au clic (uniquement pour les messages de l'utilisateur)
           if (data.auteur === username) {
             div.onclick = () => {
               if (messagesSelectionnes.has(doc.id)) {
@@ -214,6 +269,23 @@
 
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
+    }
+
+    // Fonction pour ajouter/retirer une réaction
+    function toggleReaction(messageId, emoji, messageData) {
+      const reactions = messageData.reactions || {};
+      const utilisateurs = reactions[emoji] || [];
+      const index = utilisateurs.indexOf(username);
+      if (index === -1) {
+        // Ajouter la réaction de l'utilisateur
+        utilisateurs.push(username);
+      } else {
+        // Retirer la réaction
+        utilisateurs.splice(index, 1);
+      }
+      // Mettre à jour l'objet reactions
+      reactions[emoji] = utilisateurs;
+      db.collection("messages").doc(messageId).update({ reactions: reactions });
     }
 
     function supprimerMessagesSelectionnes() {
