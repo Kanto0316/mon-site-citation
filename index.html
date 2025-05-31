@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Discussion avec Réactions</title>
+  <title>Discussion avec Réaction Cœur</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -98,7 +98,6 @@
       gap: 10px;
       font-size: 1.2em;
       user-select: none;
-      /* Toujours visible dès le chargement */
       visibility: visible;
     }
 
@@ -193,8 +192,8 @@
     const messageInput = document.getElementById("messageInput");
     const messagesSelectionnes = new Set();
 
-    // Liste d'emojis disponibles
-    const emojiList = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+    // Ne garder que la réaction cœur
+    const emojiList = ["❤️"];
 
     function envoyerMessage() {
       const texte = messageInput.value.trim();
@@ -203,7 +202,7 @@
           texte: texte,
           date: firebase.firestore.Timestamp.now(),
           auteur: username,
-          reactions: {} // Nouvelle propriété pour stocker les réactions
+          reactions: {} // Stockage des réactions
         });
         messageInput.value = "";
       }
@@ -233,11 +232,10 @@
             <div class="time">${heureFormatee}</div>
           `;
 
-          // Ajout de la zone des réactions (toujours visible)
+          // Zone de réaction cœur
           const reactionsDiv = document.createElement("div");
           reactionsDiv.className = "reactions";
 
-          // Pour chaque emoji, afficher l'emoji et le nombre de réactions
           emojiList.forEach(emoji => {
             const reactionCount = (data.reactions && data.reactions[emoji]) ? data.reactions[emoji].length : 0;
             const userReacted = data.reactions && data.reactions[emoji] && data.reactions[emoji].includes(username);
@@ -246,7 +244,7 @@
             reactionSpan.className = "reaction" + (userReacted ? " user-reacted" : "");
             reactionSpan.innerHTML = `${emoji} <span class='count'>${reactionCount}</span>`;
             reactionSpan.onclick = (e) => {
-              e.stopPropagation(); // Empêche la sélection du message
+              e.stopPropagation();
               toggleReaction(doc.id, emoji, data);
             };
             reactionsDiv.appendChild(reactionSpan);
@@ -254,7 +252,7 @@
 
           div.appendChild(reactionsDiv);
 
-          // Sélection au clic (uniquement pour les messages de l'utilisateur)
+          // Sélection au clic (messages de l'utilisateur)
           if (data.auteur === username) {
             div.onclick = () => {
               if (messagesSelectionnes.has(doc.id)) {
@@ -273,19 +271,16 @@
       });
     }
 
-    // Fonction pour ajouter/retirer une réaction
+    // Fonction pour ajouter/retirer la réaction cœur
     function toggleReaction(messageId, emoji, messageData) {
       const reactions = messageData.reactions || {};
       const utilisateurs = reactions[emoji] || [];
       const index = utilisateurs.indexOf(username);
       if (index === -1) {
-        // Ajouter la réaction de l'utilisateur
         utilisateurs.push(username);
       } else {
-        // Retirer la réaction
         utilisateurs.splice(index, 1);
       }
-      // Mettre à jour l'objet reactions
       reactions[emoji] = utilisateurs;
       db.collection("messages").doc(messageId).update({ reactions: reactions });
     }
