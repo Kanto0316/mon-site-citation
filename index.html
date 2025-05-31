@@ -24,6 +24,7 @@
       display: flex;
       flex-direction: column;
       height: 90vh;
+      position: relative;
     }
 
     .header {
@@ -37,7 +38,7 @@
       border-radius: 10px 10px 0 0;
     }
 
-    .header .delete-top, .header .clear-all {
+    .delete-top, .clear-all {
       background-color: #dc3545;
       border: none;
       color: white;
@@ -45,7 +46,14 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 1em;
-      margin-left: 5px;
+      margin-left: 10px;
+    }
+
+    .clear-all {
+      position: absolute;
+      top: 10px;
+      right: 60px;
+      z-index: 10;
     }
 
     .messages {
@@ -116,16 +124,20 @@
       cursor: pointer;
     }
 
-    .input-area button:hover {
-      transform: scale(1.2);
+    .reaction {
+      margin-top: 5px;
+      font-size: 1.3em;
+      user-select: none;
     }
 
-    .reaction-btn {
-      font-size: 1.2em;
-      background: none;
-      border: none;
+    .reaction span {
       cursor: pointer;
-      margin-top: 5px;
+    }
+
+    .reaction .count {
+      font-size: 0.9em;
+      margin-left: 4px;
+      color: #333;
     }
   </style>
 </head>
@@ -133,21 +145,16 @@
   <div class="chat-container">
     <div class="header">
       <span id="usernameDisplay">Pseudo</span>
-      <div>
-        <button class="clear-all" onclick="supprimerTousLesMessages()">🧹</button>
-        <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
-      </div>
+      <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
     </div>
-
+    <button class="clear-all" onclick="supprimerTousLesMessages()">🧹</button>
     <div class="messages" id="messages"></div>
-
     <div class="input-area">
       <input type="text" id="messageInput" placeholder="Ton message..." />
       <button onclick="envoyerMessage()">✉️</button>
     </div>
   </div>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -175,15 +182,16 @@
     const messagesDiv = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const messagesSelectionnes = new Set();
+    const messagesVisibles = new Set();
 
     function envoyerMessage() {
       const texte = messageInput.value.trim();
       if (texte !== "") {
         db.collection("messages").add({
-          texte: texte,
+          texte,
           date: firebase.firestore.Timestamp.now(),
           auteur: username,
-          likes: 0
+          likedBy: []
         });
         messageInput.value = "";
       }
@@ -206,28 +214,37 @@
             div.classList.add("selected");
           }
 
-          const afficherReactions = messagesSelectionnes.has(doc.id);
           div.innerHTML = `
             <div><strong>${data.auteur}</strong><br>${data.texte}</div>
             <div class="time">${heureFormatee}</div>
-            ${afficherReactions ? `
-              <div>
-                <button class="reaction-btn" onclick="ajouterLike('${doc.id}')">❤️</button>
-                <span id="like-count-${doc.id}">${data.likes || 0}</span>
-              </div>` : ''
-          }
           `;
 
-          div.onclick = () => {
-            if (data.auteur === username) {
+          if (data.auteur === username) {
+            div.onclick = () => {
               if (messagesSelectionnes.has(doc.id)) {
                 messagesSelectionnes.delete(doc.id);
               } else {
                 messagesSelectionnes.add(doc.id);
               }
               afficherMessages();
-            }
-          };
+            };
+          } else {
+            div.onclick = () => {
+              if (!messagesVisibles.has(doc.id)) {
+                messagesVisibles.add(doc.id);
+                afficherMessages();
+              }
+            };
+          }
+
+          if (messagesVisibles.has(doc.id)) {
+            const nbLikes = (data.likedBy || []).length;
+            const aLike = (data.likedBy || []).includes(username);
+            const likeSpan = document.createElement("div");
+            likeSpan.className = "reaction";
+            likeSpan.innerHTML = `<span onclick="ajouterLike('${doc.id}')">❤️ <span class="count">${nbLikes}</span></span>`;
+            div.appendChild(likeSpan);
+          }
 
           messagesDiv.appendChild(div);
         });
@@ -238,8 +255,18 @@
 
     function ajouterLike(messageId) {
       const messageRef = db.collection("messages").doc(messageId);
-      messageRef.update({
-        likes: firebase.firestore.FieldValue.increment(1)
+      messageRef.get().then(doc => {
+        const data = doc.data();
+        const likedBy = data.likedBy || [];
+        if (!likedBy.includes(username)) {
+          messageRef.update({
+            likedBy: firebase.firestore.FieldValue.arrayUnion(username)
+          });
+        } else {
+          messageRef.update({
+            likedBy: firebase.firestore.FieldValue.arrayRemove(username)
+          });
+        }
       });
     }
 
@@ -251,8 +278,8 @@
 
       let confirmation = "Voulez-vous supprimer les messages suivants ?\n\n";
       let listeMessages = [];
-
       const promesses = [];
+
       messagesSelectionnes.forEach(id => {
         const promesse = db.collection("messages").doc(id).get().then(doc => {
           const data = doc.data();
@@ -275,13 +302,14 @@
     }
 
     function supprimerTousLesMessages() {
-      if (!confirm("Supprimer TOUS les messages ?")) return;
-
-      db.collection("messages").get().then(snapshot => {
-        snapshot.forEach(doc => {
-          db.collection("messages").doc(doc.id).delete();
+      if (confirm("Supprimer tous les messages ?")) {
+        db.collection("messages").get().then(snapshot => {
+          snapshot.forEach(doc => {
+            db.collection("messages").doc(doc.id).delete();
+          });
         });
-      });
+        messagesSelectionnes.clear();
+      }
     }
 
     afficherMessages();
