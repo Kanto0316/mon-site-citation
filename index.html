@@ -26,6 +26,15 @@
       height: 90vh;
     }
 
+    .header {
+      background: #007bff;
+      color: white;
+      padding: 10px 15px;
+      font-size: 1.2em;
+      text-align: center;
+      border-radius: 10px 10px 0 0;
+    }
+
     .messages {
       flex: 1;
       padding: 15px;
@@ -40,6 +49,7 @@
       border-radius: 10px;
       max-width: 80%;
       position: relative;
+      cursor: pointer;
     }
 
     .me {
@@ -52,6 +62,10 @@
       background-color: #e2f8d9;
       align-self: flex-start;
       text-align: left;
+    }
+
+    .message.selected {
+      outline: 2px solid red;
     }
 
     .time {
@@ -88,10 +102,26 @@
     .input-area button:hover {
       background-color: #0056b3;
     }
+
+    .delete-btn {
+      display: none;
+      margin: 5px auto;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .message.selected .delete-btn {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div class="chat-container">
+    <div class="header" id="usernameDisplay">Pseudo</div>
     <div class="messages" id="messages"></div>
     <div class="input-area">
       <input type="text" id="messageInput" placeholder="Ton message..." />
@@ -104,7 +134,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
-    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
@@ -118,11 +147,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Demander le pseudo de l'utilisateur
-    const username = prompt("Entre ton nom ou pseudo :");
+    let username = localStorage.getItem("chatUsername");
+    if (!username) {
+      username = prompt("Entrez votre pseudo :");
+      localStorage.setItem("chatUsername", username);
+    }
+    document.getElementById("usernameDisplay").textContent = "Connecté en tant que : " + username;
 
     const messagesDiv = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
+    let selectedMessageId = null;
 
     function envoyerMessage() {
       const texte = messageInput.value.trim();
@@ -133,6 +167,13 @@
           auteur: username
         });
         messageInput.value = "";
+      }
+    }
+
+    function supprimerMessage(id) {
+      if (confirm("Supprimer ce message ?")) {
+        db.collection("messages").doc(id).delete();
+        selectedMessageId = null;
       }
     }
 
@@ -148,14 +189,63 @@
         const div = document.createElement("div");
         const classe = (data.auteur === username) ? "me" : "other";
         div.className = `message ${classe}`;
+        if (doc.id === selectedMessageId) {
+          div.classList.add("selected");
+        }
+
         div.innerHTML = `
           <div><strong>${data.auteur}</strong><br>${data.texte}</div>
           <div class="time">${heureFormatee}</div>
+          ${data.auteur === username ? `<button class="delete-btn" onclick="supprimerMessage('${doc.id}')">🗑️ Supprimer</button>` : ""}
         `;
+
+        div.onclick = () => {
+          if (selectedMessageId === doc.id) {
+            selectedMessageId = null;
+          } else {
+            selectedMessageId = doc.id;
+          }
+          afficherMessages(); // Rafraîchit les messages pour montrer la sélection
+        };
+
         messagesDiv.appendChild(div);
       });
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
+
+    function afficherMessages() {
+      db.collection("messages").orderBy("date").get().then(snapshot => {
+        messagesDiv.innerHTML = "";
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const dateObj = data.date.toDate();
+          const heures = String(dateObj.getHours()).padStart(2, '0');
+          const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+          const heureFormatee = `${heures}:${minutes}`;
+
+          const div = document.createElement("div");
+          const classe = (data.auteur === username) ? "me" : "other";
+          div.className = `message ${classe}`;
+          if (doc.id === selectedMessageId) {
+            div.classList.add("selected");
+          }
+
+          div.innerHTML = `
+            <div><strong>${data.auteur}</strong><br>${data.texte}</div>
+            <div class="time">${heureFormatee}</div>
+            ${data.auteur === username ? `<button class="delete-btn" onclick="supprimerMessage('${doc.id}')">🗑️ Supprimer</button>` : ""}
+          `;
+
+          div.onclick = () => {
+            selectedMessageId = (selectedMessageId === doc.id) ? null : doc.id;
+            afficherMessages();
+          };
+
+          messagesDiv.appendChild(div);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    }
   </script>
 </body>
 </html>
