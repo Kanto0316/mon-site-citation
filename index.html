@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Bloc-notes</title>
+  <meta charset="UTF-8">
+  <title>Bloc-note partagé</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
       background: #f2f2f2;
       display: flex;
       justify-content: center;
@@ -57,42 +57,56 @@
 </head>
 <body>
   <div class="container">
-    <h1>📝 Mon Bloc-notes</h1>
-    <textarea id="noteInput" placeholder="Écris ta note ici..."></textarea>
+    <h1>📝 Bloc-note partagé</h1>
+    <textarea id="noteInput" placeholder="Écris une note ici..."></textarea>
     <button onclick="ajouterNote()">Ajouter</button>
     <ul id="listeNotes"></ul>
   </div>
 
+  <!-- SDK Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <script>
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
+      authDomain: "blocnotepartage.firebaseapp.com",
+      projectId: "blocnotepartage",
+      storageBucket: "blocnotepartage.firebasestorage.app",
+      messagingSenderId: "635513565402",
+      appId: "1:635513565402:web:85b3fca4428eabad3a75e3",
+      measurementId: "G-HHTMMHCZQP"
+    };
+
+    // Initialisation Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const noteInput = document.getElementById("noteInput");
     const listeNotes = document.getElementById("listeNotes");
-
-    // Charger les notes depuis localStorage
-    let notes = JSON.parse(localStorage.getItem("notes")) || [];
-    afficherNotes();
 
     function ajouterNote() {
       const texte = noteInput.value.trim();
       if (texte !== "") {
-        notes.push(texte);
+        db.collection("notes").add({
+          texte: texte,
+          date: new Date()
+        });
         noteInput.value = "";
-        sauvegarder();
-        afficherNotes();
       }
     }
 
-    function sauvegarder() {
-      localStorage.setItem("notes", JSON.stringify(notes));
-    }
-
-    function afficherNotes() {
+    // Affichage en temps réel des notes
+    db.collection("notes").orderBy("date", "desc").onSnapshot(snapshot => {
       listeNotes.innerHTML = "";
-      notes.forEach(note => {
+      snapshot.forEach(doc => {
+        const note = doc.data().texte;
         const li = document.createElement("li");
         li.textContent = note;
         listeNotes.appendChild(li);
       });
-    }
+    });
   </script>
 </body>
 </html>
