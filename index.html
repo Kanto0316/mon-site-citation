@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Discussion avec Réaction Cœur</title>
+  <title>Discussion</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -59,12 +59,11 @@
       padding: 12px 18px;
       margin: 8px 0;
       border-radius: 20px;
-      max-width: 80%;
+      max-width: 50%;
       word-wrap: break-word;
       position: relative;
       cursor: pointer;
       transition: all 0.3s ease;
-      display: inline-block;
     }
 
     .me {
@@ -90,33 +89,6 @@
       font-size: 0.8em;
       color: #555;
       margin-top: 5px;
-    }
-
-    .reactions {
-      margin-top: 8px;
-      display: flex;
-      gap: 10px;
-      font-size: 1.2em;
-      user-select: none;
-      visibility: visible;
-    }
-
-    .reaction {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .reaction span.count {
-      margin-left: 4px;
-      font-size: 0.9em;
-      color: #333;
-    }
-
-    .reaction.user-reacted {
-      background-color: rgba(0,0,0,0.1);
-      border-radius: 12px;
-      padding: 2px 6px;
     }
 
     .input-area {
@@ -146,9 +118,31 @@
     .input-area button:hover {
       transform: scale(1.2);
     }
+
+    /* Autocollant pour suppression complète */
+    .sticker-clear-all {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #ffc107;
+      color: black;
+      font-size: 1.5em;
+      padding: 10px 14px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 999;
+    }
+
+    .sticker-clear-all:hover {
+      transform: scale(1.1);
+    }
   </style>
 </head>
 <body>
+
+  <div class="sticker-clear-all" onclick="supprimerTousMesMessages()" title="Supprimer tous mes messages">🧹</div>
+
   <div class="chat-container">
     <div class="header">
       <span id="usernameDisplay">Pseudo</span>
@@ -192,17 +186,13 @@
     const messageInput = document.getElementById("messageInput");
     const messagesSelectionnes = new Set();
 
-    // Ne garder que la réaction cœur
-    const emojiList = ["❤️"];
-
     function envoyerMessage() {
       const texte = messageInput.value.trim();
       if (texte !== "") {
         db.collection("messages").add({
           texte: texte,
           date: firebase.firestore.Timestamp.now(),
-          auteur: username,
-          reactions: {} // Stockage des réactions
+          auteur: username
         });
         messageInput.value = "";
       }
@@ -218,7 +208,6 @@
           const minute = String(dateObj.getMinutes()).padStart(2, '0');
           const heureFormatee = `${heure}:${minute}`;
 
-          // Conteneur message
           const div = document.createElement("div");
           const classe = (data.auteur === username) ? "me" : "other";
           div.className = `message ${classe}`;
@@ -226,33 +215,11 @@
             div.classList.add("selected");
           }
 
-          // Contenu du message
           div.innerHTML = `
             <div><strong>${data.auteur}</strong><br>${data.texte}</div>
             <div class="time">${heureFormatee}</div>
           `;
 
-          // Zone de réaction cœur
-          const reactionsDiv = document.createElement("div");
-          reactionsDiv.className = "reactions";
-
-          emojiList.forEach(emoji => {
-            const reactionCount = (data.reactions && data.reactions[emoji]) ? data.reactions[emoji].length : 0;
-            const userReacted = data.reactions && data.reactions[emoji] && data.reactions[emoji].includes(username);
-
-            const reactionSpan = document.createElement("div");
-            reactionSpan.className = "reaction" + (userReacted ? " user-reacted" : "");
-            reactionSpan.innerHTML = `${emoji} <span class='count'>${reactionCount}</span>`;
-            reactionSpan.onclick = (e) => {
-              e.stopPropagation();
-              toggleReaction(doc.id, emoji, data);
-            };
-            reactionsDiv.appendChild(reactionSpan);
-          });
-
-          div.appendChild(reactionsDiv);
-
-          // Sélection au clic (messages de l'utilisateur)
           if (data.auteur === username) {
             div.onclick = () => {
               if (messagesSelectionnes.has(doc.id)) {
@@ -269,20 +236,6 @@
 
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
-    }
-
-    // Fonction pour ajouter/retirer la réaction cœur
-    function toggleReaction(messageId, emoji, messageData) {
-      const reactions = messageData.reactions || {};
-      const utilisateurs = reactions[emoji] || [];
-      const index = utilisateurs.indexOf(username);
-      if (index === -1) {
-        utilisateurs.push(username);
-      } else {
-        utilisateurs.splice(index, 1);
-      }
-      reactions[emoji] = utilisateurs;
-      db.collection("messages").doc(messageId).update({ reactions: reactions });
     }
 
     function supprimerMessagesSelectionnes() {
@@ -314,6 +267,27 @@
           messagesSelectionnes.clear();
         }
       });
+    }
+
+    function supprimerTousMesMessages() {
+      if (!confirm("Supprimer *tous* vos messages ?")) return;
+
+      db.collection("messages")
+        .where("auteur", "==", username)
+        .get()
+        .then(snapshot => {
+          const batch = db.batch();
+          snapshot.forEach(doc => {
+            batch.delete(doc.ref);
+          });
+          return batch.commit();
+        })
+        .then(() => {
+          alert("Tous vos messages ont été supprimés.");
+        })
+        .catch(error => {
+          console.error("Erreur lors de la suppression :", error);
+        });
     }
 
     afficherMessages();
