@@ -193,7 +193,7 @@
             <div class="time">${heureFormatee}</div>
           `;
 
-          // Clique pour sélectionner/sélectionner messages à supprimer (uniquement si auteur = username)
+          // Clique pour sélectionner/désélectionner messages à supprimer (uniquement si auteur = username)
           div.onclick = () => {
             if (data.auteur === username) {
               if (messagesSelectionnes.has(doc.id)) {
@@ -205,17 +205,20 @@
             }
           };
 
-          // Affichage direct de la réaction coeur et compteur
+          // Affichage direct de la réaction cœur et compteur (compteur caché si 0)
           const nbLikes = (data.likedBy || []).length;
           const isLiked = (data.likedBy || []).includes(username);
           const likeSpan = document.createElement("div");
           likeSpan.className = "reaction";
+
           likeSpan.innerHTML = `
             <span style="cursor:pointer; user-select:none; ${isLiked ? 'font-weight:bold;' : ''}" 
               onclick="event.stopPropagation(); ajouterLike('${doc.id}')">
-              ❤️ <span class="count">${nbLikes}</span>
+              ❤️
+              ${nbLikes > 0 ? `<span class="count">${nbLikes}</span>` : ''}
             </span>
           `;
+
           div.appendChild(likeSpan);
 
           messagesDiv.appendChild(div);
