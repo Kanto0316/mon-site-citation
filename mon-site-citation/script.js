@@ -2,7 +2,7 @@ const citations = [
   "La vie est un mystère qu'il faut vivre, et non un problème à résoudre.",
   "Le succès, c’est d’aller d’échec en échec sans perdre son enthousiasme.",
   "Chaque jour est une nouvelle chance de changer ta vie.",
-  "kanto kely"
+  "kanto kely.",
 ];
 
 function nouvelleCitation() {
