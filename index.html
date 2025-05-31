@@ -160,7 +160,6 @@
     const messagesDiv = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const messagesSelectionnes = new Set();
-    const messagesVisibles = new Set();
 
     function envoyerMessage() {
       const texte = messageInput.value.trim();
@@ -194,27 +193,30 @@
             <div class="time">${heureFormatee}</div>
           `;
 
+          // Clique pour sélectionner/sélectionner messages à supprimer (uniquement si auteur = username)
           div.onclick = () => {
             if (data.auteur === username) {
-              if (messagesSelectionnes.has(doc.id)) messagesSelectionnes.delete(doc.id);
-              else messagesSelectionnes.add(doc.id);
+              if (messagesSelectionnes.has(doc.id)) {
+                messagesSelectionnes.delete(doc.id);
+              } else {
+                messagesSelectionnes.add(doc.id);
+              }
+              afficherMessages();
             }
-            messagesVisibles.add(doc.id);
-            afficherMessages();
           };
 
-          if (messagesVisibles.has(doc.id)) {
-            const nbLikes = (data.likedBy || []).length;
-            const isLiked = (data.likedBy || []).includes(username);
-            const likeSpan = document.createElement("div");
-            likeSpan.className = "reaction";
-            likeSpan.innerHTML = `
-              <span onclick="ajouterLike('${doc.id}')">
-                ❤️ <span class="count">${nbLikes}</span>
-              </span>
-            `;
-            div.appendChild(likeSpan);
-          }
+          // Affichage direct de la réaction coeur et compteur
+          const nbLikes = (data.likedBy || []).length;
+          const isLiked = (data.likedBy || []).includes(username);
+          const likeSpan = document.createElement("div");
+          likeSpan.className = "reaction";
+          likeSpan.innerHTML = `
+            <span style="cursor:pointer; user-select:none; ${isLiked ? 'font-weight:bold;' : ''}" 
+              onclick="event.stopPropagation(); ajouterLike('${doc.id}')">
+              ❤️ <span class="count">${nbLikes}</span>
+            </span>
+          `;
+          div.appendChild(likeSpan);
 
           messagesDiv.appendChild(div);
         });
@@ -229,8 +231,10 @@
         const data = doc.data();
         let likes = data.likedBy || [];
         if (likes.includes(username)) {
+          // Retirer like
           likes = likes.filter(u => u !== username);
         } else {
+          // Ajouter like
           likes.push(username);
         }
         ref.update({ likedBy: likes });
@@ -252,7 +256,10 @@
         });
         promesses.push(promesse);
       });
-      Promise.all(promesses).then(() => messagesSelectionnes.clear());
+      Promise.all(promesses).then(() => {
+        messagesSelectionnes.clear();
+        afficherMessages();
+      });
     }
 
     function toutSupprimer() {
