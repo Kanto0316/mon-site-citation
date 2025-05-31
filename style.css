@@ -3,8 +3,7 @@ body {
   background: #f2f2f2;
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100vh;
+  padding-top: 50px;
 }
 
 .container {
@@ -13,21 +12,25 @@ body {
   width: 400px;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  text-align: center;
 }
 
-textarea {
+input[type="text"] {
   width: 100%;
-  height: 200px;
   padding: 10px;
   font-size: 1rem;
+  margin-bottom: 15px;
   border: 1px solid #ccc;
   border-radius: 6px;
-  resize: vertical;
 }
 
-.info {
-  margin-top: 10px;
-  font-size: 0.9em;
-  color: gray;
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+li {
+  background: #e8e8e8;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 5px;
 }
