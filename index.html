@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Bloc-notes</title>
+  <meta charset="UTF-8" />
+  <title>Bloc-notes dynamique</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>📝 Mon Bloc-notes</h1>
-    <textarea id="note" placeholder="Écris ta note ici..."></textarea>
-    <p class="info">💾 Sauvegarde automatique</p>
+    <h1>📝 Mes Notes</h1>
+    <input type="text" id="noteInput" placeholder="Écris une note et appuie sur Entrée..." autofocus />
+    <ul id="listeNotes"></ul>
   </div>
+
   <script src="script.js" defer></script>
 </body>
 </html>
