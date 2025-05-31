@@ -13,7 +13,6 @@
       display: flex;
       justify-content: center;
     }
-
     .chat-container {
       width: 100%;
       max-width: 600px;
@@ -24,9 +23,7 @@
       display: flex;
       flex-direction: column;
       height: 90vh;
-      position: relative;
     }
-
     .header {
       background: #007bff;
       color: white;
@@ -37,8 +34,8 @@
       align-items: center;
       border-radius: 10px 10px 0 0;
     }
-
-    .delete-top, .clear-all {
+    .header .delete-top,
+    .header .clear-all {
       background-color: #dc3545;
       border: none;
       color: white;
@@ -46,16 +43,8 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 1em;
-      margin-left: 10px;
+      margin-left: 5px;
     }
-
-    .clear-all {
-      position: absolute;
-      top: 10px;
-      right: 60px;
-      z-index: 10;
-    }
-
     .messages {
       flex: 1;
       padding: 15px;
@@ -63,7 +52,6 @@
       display: flex;
       flex-direction: column;
     }
-
     .message {
       padding: 12px 18px;
       margin: 8px 0;
@@ -74,38 +62,40 @@
       cursor: pointer;
       transition: all 0.3s ease;
     }
-
     .me {
       background-color: #cce5ff;
       align-self: flex-end;
       text-align: right;
       border-bottom-right-radius: 5px;
     }
-
     .other {
       background-color: #d4edda;
       align-self: flex-start;
       text-align: left;
       border-bottom-left-radius: 5px;
     }
-
     .message.selected {
       outline: 3px solid red;
       background-color: #ffe6e6 !important;
     }
-
     .time {
       font-size: 0.8em;
       color: #555;
       margin-top: 5px;
     }
-
+    .reaction {
+      margin-top: 5px;
+      font-size: 1.2em;
+    }
+    .reaction .count {
+      font-size: 0.9em;
+      margin-left: 4px;
+    }
     .input-area {
       display: flex;
       padding: 15px;
       border-top: 1px solid #ccc;
     }
-
     .input-area input {
       flex: 1;
       padding: 12px 16px;
@@ -116,28 +106,14 @@
       outline: none;
       margin-right: 10px;
     }
-
     .input-area button {
       background: none;
       border: none;
       font-size: 1.8rem;
       cursor: pointer;
     }
-
-    .reaction {
-      margin-top: 5px;
-      font-size: 1.3em;
-      user-select: none;
-    }
-
-    .reaction span {
-      cursor: pointer;
-    }
-
-    .reaction .count {
-      font-size: 0.9em;
-      margin-left: 4px;
-      color: #333;
+    .input-area button:hover {
+      transform: scale(1.2);
     }
   </style>
 </head>
@@ -145,10 +121,14 @@
   <div class="chat-container">
     <div class="header">
       <span id="usernameDisplay">Pseudo</span>
-      <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
+      <div>
+        <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
+        <button class="clear-all" onclick="toutSupprimer()">🧹</button>
+      </div>
     </div>
-    <button class="clear-all" onclick="supprimerTousLesMessages()">🧹</button>
+
     <div class="messages" id="messages"></div>
+
     <div class="input-area">
       <input type="text" id="messageInput" placeholder="Ton message..." />
       <button onclick="envoyerMessage()">✉️</button>
@@ -165,10 +145,8 @@
       projectId: "blocnotepartage",
       storageBucket: "blocnotepartage.appspot.com",
       messagingSenderId: "635513565402",
-      appId: "1:635513565402:web:85b3fca4428eabad3a75e3",
-      measurementId: "G-HHTMMHCZQP"
+      appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -188,7 +166,7 @@
       const texte = messageInput.value.trim();
       if (texte !== "") {
         db.collection("messages").add({
-          texte,
+          texte: texte,
           date: firebase.firestore.Timestamp.now(),
           auteur: username,
           likedBy: []
@@ -206,67 +184,56 @@
           const heure = String(dateObj.getHours()).padStart(2, '0');
           const minute = String(dateObj.getMinutes()).padStart(2, '0');
           const heureFormatee = `${heure}:${minute}`;
-
           const div = document.createElement("div");
           const classe = (data.auteur === username) ? "me" : "other";
           div.className = `message ${classe}`;
-          if (messagesSelectionnes.has(doc.id)) {
-            div.classList.add("selected");
-          }
+          if (messagesSelectionnes.has(doc.id)) div.classList.add("selected");
 
           div.innerHTML = `
             <div><strong>${data.auteur}</strong><br>${data.texte}</div>
             <div class="time">${heureFormatee}</div>
           `;
 
-          if (data.auteur === username) {
-            div.onclick = () => {
-              if (messagesSelectionnes.has(doc.id)) {
-                messagesSelectionnes.delete(doc.id);
-              } else {
-                messagesSelectionnes.add(doc.id);
-              }
-              afficherMessages();
-            };
-          } else {
-            div.onclick = () => {
-              if (!messagesVisibles.has(doc.id)) {
-                messagesVisibles.add(doc.id);
-                afficherMessages();
-              }
-            };
-          }
+          div.onclick = () => {
+            if (data.auteur === username) {
+              if (messagesSelectionnes.has(doc.id)) messagesSelectionnes.delete(doc.id);
+              else messagesSelectionnes.add(doc.id);
+            }
+            messagesVisibles.add(doc.id);
+            afficherMessages();
+          };
 
           if (messagesVisibles.has(doc.id)) {
             const nbLikes = (data.likedBy || []).length;
-            const aLike = (data.likedBy || []).includes(username);
+            const isLiked = (data.likedBy || []).includes(username);
             const likeSpan = document.createElement("div");
             likeSpan.className = "reaction";
-            likeSpan.innerHTML = `<span onclick="ajouterLike('${doc.id}')">❤️ <span class="count">${nbLikes}</span></span>`;
+            likeSpan.innerHTML = `
+              <span onclick="ajouterLike('${doc.id}')">
+                ❤️ <span class="count">${nbLikes}</span>
+              </span>
+            `;
             div.appendChild(likeSpan);
           }
 
           messagesDiv.appendChild(div);
         });
-
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     }
 
-    function ajouterLike(messageId) {
-      const messageRef = db.collection("messages").doc(messageId);
-      messageRef.get().then(doc => {
+    function ajouterLike(id) {
+      const ref = db.collection("messages").doc(id);
+      ref.get().then(doc => {
+        if (!doc.exists) return;
         const data = doc.data();
-        const likedBy = data.likedBy || [];
-        if (!likedBy.includes(username)) {
-          messageRef.update({
-            likedBy: firebase.firestore.FieldValue.arrayUnion(username)
-          });
+        let likes = data.likedBy || [];
+        if (likes.includes(username)) {
+          likes = likes.filter(u => u !== username);
         } else {
-          messageRef.update({
-            likedBy: firebase.firestore.FieldValue.arrayRemove(username)
-          });
+          likes.push(username);
         }
+        ref.update({ likedBy: likes });
       });
     }
 
@@ -275,40 +242,24 @@
         alert("Aucun message sélectionné.");
         return;
       }
-
-      let confirmation = "Voulez-vous supprimer les messages suivants ?\n\n";
-      let listeMessages = [];
       const promesses = [];
-
       messagesSelectionnes.forEach(id => {
         const promesse = db.collection("messages").doc(id).get().then(doc => {
           const data = doc.data();
           if (data.auteur === username) {
-            listeMessages.push(`- ${data.texte}`);
+            db.collection("messages").doc(id).delete();
           }
         });
         promesses.push(promesse);
       });
-
-      Promise.all(promesses).then(() => {
-        confirmation += listeMessages.join("\n");
-        if (confirm(confirmation)) {
-          messagesSelectionnes.forEach(id => {
-            db.collection("messages").doc(id).delete();
-          });
-          messagesSelectionnes.clear();
-        }
-      });
+      Promise.all(promesses).then(() => messagesSelectionnes.clear());
     }
 
-    function supprimerTousLesMessages() {
+    function toutSupprimer() {
       if (confirm("Supprimer tous les messages ?")) {
         db.collection("messages").get().then(snapshot => {
-          snapshot.forEach(doc => {
-            db.collection("messages").doc(doc.id).delete();
-          });
+          snapshot.forEach(doc => db.collection("messages").doc(doc.id).delete());
         });
-        messagesSelectionnes.clear();
       }
     }
 
