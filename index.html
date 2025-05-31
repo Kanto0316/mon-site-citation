@@ -31,8 +31,20 @@
       color: white;
       padding: 10px 15px;
       font-size: 1.2em;
-      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       border-radius: 10px 10px 0 0;
+    }
+
+    .header .delete-top {
+      background-color: #dc3545;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
     }
 
     .messages {
@@ -65,7 +77,7 @@
     }
 
     .message.selected {
-      outline: 2px solid red;
+      outline: 3px solid red;
     }
 
     .time {
@@ -102,34 +114,24 @@
     .input-area button:hover {
       background-color: #0056b3;
     }
-
-    .delete-btn {
-      display: none;
-      margin: 5px auto;
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 10px;
-      cursor: pointer;
-    }
-
-    .message.selected .delete-btn {
-      display: block;
-    }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <div class="header" id="usernameDisplay">Pseudo</div>
+    <div class="header">
+      <span id="usernameDisplay">Pseudo</span>
+      <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
+    </div>
+
     <div class="messages" id="messages"></div>
+
     <div class="input-area">
       <input type="text" id="messageInput" placeholder="Ton message..." />
       <button onclick="envoyerMessage()">Envoyer</button>
     </div>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -156,7 +158,7 @@
 
     const messagesDiv = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
-    let selectedMessageId = null;
+    const messagesSelectionnes = new Set();
 
     function envoyerMessage() {
       const texte = messageInput.value.trim();
@@ -170,82 +172,78 @@
       }
     }
 
-    function supprimerMessage(id) {
-      if (confirm("Supprimer ce message ?")) {
-        db.collection("messages").doc(id).delete();
-        selectedMessageId = null;
-      }
-    }
-
-    db.collection("messages").orderBy("date").onSnapshot(snapshot => {
-      messagesDiv.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const dateObj = data.date.toDate();
-        const heures = String(dateObj.getHours()).padStart(2, '0');
-        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-        const heureFormatee = `${heures}:${minutes}`;
-
-        const div = document.createElement("div");
-        const classe = (data.auteur === username) ? "me" : "other";
-        div.className = `message ${classe}`;
-        if (doc.id === selectedMessageId) {
-          div.classList.add("selected");
-        }
-
-        div.innerHTML = `
-          <div><strong>${data.auteur}</strong><br>${data.texte}</div>
-          <div class="time">${heureFormatee}</div>
-          ${data.auteur === username ? `<button class="delete-btn" onclick="supprimerMessage('${doc.id}')">🗑️ Supprimer</button>` : ""}
-        `;
-
-        div.onclick = () => {
-          if (selectedMessageId === doc.id) {
-            selectedMessageId = null;
-          } else {
-            selectedMessageId = doc.id;
-          }
-          afficherMessages(); // Rafraîchit les messages pour montrer la sélection
-        };
-
-        messagesDiv.appendChild(div);
-      });
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
-
     function afficherMessages() {
-      db.collection("messages").orderBy("date").get().then(snapshot => {
+      db.collection("messages").orderBy("date").onSnapshot(snapshot => {
         messagesDiv.innerHTML = "";
         snapshot.forEach(doc => {
           const data = doc.data();
           const dateObj = data.date.toDate();
-          const heures = String(dateObj.getHours()).padStart(2, '0');
-          const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-          const heureFormatee = `${heures}:${minutes}`;
+          const heure = String(dateObj.getHours()).padStart(2, '0');
+          const minute = String(dateObj.getMinutes()).padStart(2, '0');
+          const heureFormatee = `${heure}:${minute}`;
 
           const div = document.createElement("div");
           const classe = (data.auteur === username) ? "me" : "other";
           div.className = `message ${classe}`;
-          if (doc.id === selectedMessageId) {
+          if (messagesSelectionnes.has(doc.id)) {
             div.classList.add("selected");
           }
 
           div.innerHTML = `
             <div><strong>${data.auteur}</strong><br>${data.texte}</div>
             <div class="time">${heureFormatee}</div>
-            ${data.auteur === username ? `<button class="delete-btn" onclick="supprimerMessage('${doc.id}')">🗑️ Supprimer</button>` : ""}
           `;
 
-          div.onclick = () => {
-            selectedMessageId = (selectedMessageId === doc.id) ? null : doc.id;
-            afficherMessages();
-          };
+          if (data.auteur === username) {
+            div.onclick = () => {
+              if (messagesSelectionnes.has(doc.id)) {
+                messagesSelectionnes.delete(doc.id);
+              } else {
+                messagesSelectionnes.add(doc.id);
+              }
+              afficherMessages();
+            };
+          }
 
           messagesDiv.appendChild(div);
         });
+
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     }
+
+    function supprimerMessagesSelectionnes() {
+      if (messagesSelectionnes.size === 0) {
+        alert("Aucun message sélectionné.");
+        return;
+      }
+
+      let confirmation = "Voulez-vous supprimer les messages suivants ?\n\n";
+      let listeMessages = [];
+
+      const promesses = [];
+      messagesSelectionnes.forEach(id => {
+        const promesse = db.collection("messages").doc(id).get().then(doc => {
+          const data = doc.data();
+          if (data.auteur === username) {
+            listeMessages.push(`- ${data.texte}`);
+          }
+        });
+        promesses.push(promesse);
+      });
+
+      Promise.all(promesses).then(() => {
+        confirmation += listeMessages.join("\n");
+        if (confirm(confirmation)) {
+          messagesSelectionnes.forEach(id => {
+            db.collection("messages").doc(id).delete();
+          });
+          messagesSelectionnes.clear();
+        }
+      });
+    }
+
+    afficherMessages();
   </script>
 </body>
 </html>
