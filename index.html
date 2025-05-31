@@ -98,6 +98,8 @@
       gap: 10px;
       font-size: 1.2em;
       user-select: none;
+      /* Toujours visible dès le chargement */
+      visibility: visible;
     }
 
     .reaction {
@@ -231,7 +233,7 @@
             <div class="time">${heureFormatee}</div>
           `;
 
-          // Ajout de la zone des réactions
+          // Ajout de la zone des réactions (toujours visible)
           const reactionsDiv = document.createElement("div");
           reactionsDiv.className = "reactions";
 
