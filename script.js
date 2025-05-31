@@ -5,13 +5,17 @@ const listeNotes = document.getElementById("listeNotes");
 let notes = JSON.parse(localStorage.getItem("notes")) || [];
 afficherNotes();
 
-// Quand on appuie sur Entrée
+// Détection de la touche Entrée
 noteInput.addEventListener("keydown", function(e) {
-  if (e.key === "Enter" && noteInput.value.trim() !== "") {
-    notes.push(noteInput.value.trim());
-    noteInput.value = "";
-    sauvegarder();
-    afficherNotes();
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault(); // Empêche le retour à la ligne
+    const texte = noteInput.value.trim();
+    if (texte !== "") {
+      notes.push(texte);
+      noteInput.value = "";
+      sauvegarder();
+      afficherNotes();
+    }
   }
 });
 
@@ -20,7 +24,7 @@ function sauvegarder() {
   localStorage.setItem("notes", JSON.stringify(notes));
 }
 
-// Afficher les notes dans la liste
+// Afficher les notes
 function afficherNotes() {
   listeNotes.innerHTML = "";
   notes.forEach(note => {
