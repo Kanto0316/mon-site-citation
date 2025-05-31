@@ -1,13 +1,24 @@
 const citations = [
-    "Le succès est la somme de petits efforts répétés jour après jour.",
-    "Crois en toi, chaque jour est une nouvelle chance.",
-    "Fais de ton mieux, le reste suivra.",
-    "Reste fort, les grandes choses prennent du temps.",
-    "Ta seule limite, c’est toi-même.",
-    "Commence petit, rêve grand, agis maintenant."
+  "La vie est un mystère qu'il faut vivre, et non un problème à résoudre.",
+  "Le succès, c’est d’aller d’échec en échec sans perdre son enthousiasme.",
+  "Chaque jour est une nouvelle chance de changer ta vie."
 ];
 
 function nouvelleCitation() {
-    const index = Math.floor(Math.random() * citations.length);
-    document.getElementById("citation").innerText = citations[index];
+  const index = Math.floor(Math.random() * citations.length);
+  const citation = citations[index];
+  document.getElementById("citation").textContent = citation;
+
+  // Sauvegarder dans localStorage
+  localStorage.setItem("citationDuJour", citation);
+}
+
+window.onload = function() {
+  // Vérifier s'il y a déjà une citation sauvegardée
+  const citationSauvegardee = localStorage.getItem("citationDuJour");
+  if (citationSauvegardee) {
+    document.getElementById("citation").textContent = citationSauvegardee;
+  } else {
+    nouvelleCitation();
+  }
 }
