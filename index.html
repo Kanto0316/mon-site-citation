@@ -37,7 +37,7 @@
       border-radius: 10px 10px 0 0;
     }
 
-    .header .delete-top {
+    .header .delete-top, .header .clear-all {
       background-color: #dc3545;
       border: none;
       color: white;
@@ -45,6 +45,7 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 1em;
+      margin-left: 5px;
     }
 
     .messages {
@@ -119,34 +120,23 @@
       transform: scale(1.2);
     }
 
-    /* Autocollant pour suppression complète */
-    .sticker-clear-all {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: #ffc107;
-      color: black;
-      font-size: 1.5em;
-      padding: 10px 14px;
-      border-radius: 50%;
+    .reaction-btn {
+      font-size: 1.2em;
+      background: none;
+      border: none;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      z-index: 999;
-    }
-
-    .sticker-clear-all:hover {
-      transform: scale(1.1);
+      margin-top: 5px;
     }
   </style>
 </head>
 <body>
-
-  <div class="sticker-clear-all" onclick="supprimerTousMesMessages()" title="Supprimer tous mes messages">🧹</div>
-
   <div class="chat-container">
     <div class="header">
       <span id="usernameDisplay">Pseudo</span>
-      <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
+      <div>
+        <button class="clear-all" onclick="supprimerTousLesMessages()">🧹</button>
+        <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
+      </div>
     </div>
 
     <div class="messages" id="messages"></div>
@@ -166,7 +156,7 @@
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
       projectId: "blocnotepartage",
-      storageBucket: "blocnotepartage.firebasestorage.app",
+      storageBucket: "blocnotepartage.appspot.com",
       messagingSenderId: "635513565402",
       appId: "1:635513565402:web:85b3fca4428eabad3a75e3",
       measurementId: "G-HHTMMHCZQP"
@@ -192,7 +182,8 @@
         db.collection("messages").add({
           texte: texte,
           date: firebase.firestore.Timestamp.now(),
-          auteur: username
+          auteur: username,
+          likes: 0
         });
         messageInput.value = "";
       }
@@ -215,26 +206,40 @@
             div.classList.add("selected");
           }
 
+          const afficherReactions = messagesSelectionnes.has(doc.id);
           div.innerHTML = `
             <div><strong>${data.auteur}</strong><br>${data.texte}</div>
             <div class="time">${heureFormatee}</div>
+            ${afficherReactions ? `
+              <div>
+                <button class="reaction-btn" onclick="ajouterLike('${doc.id}')">❤️</button>
+                <span id="like-count-${doc.id}">${data.likes || 0}</span>
+              </div>` : ''
+          }
           `;
 
-          if (data.auteur === username) {
-            div.onclick = () => {
+          div.onclick = () => {
+            if (data.auteur === username) {
               if (messagesSelectionnes.has(doc.id)) {
                 messagesSelectionnes.delete(doc.id);
               } else {
                 messagesSelectionnes.add(doc.id);
               }
               afficherMessages();
-            };
-          }
+            }
+          };
 
           messagesDiv.appendChild(div);
         });
 
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    }
+
+    function ajouterLike(messageId) {
+      const messageRef = db.collection("messages").doc(messageId);
+      messageRef.update({
+        likes: firebase.firestore.FieldValue.increment(1)
       });
     }
 
@@ -269,25 +274,14 @@
       });
     }
 
-    function supprimerTousMesMessages() {
-      if (!confirm("Supprimer *tous* vos messages ?")) return;
+    function supprimerTousLesMessages() {
+      if (!confirm("Supprimer TOUS les messages ?")) return;
 
-      db.collection("messages")
-        .where("auteur", "==", username)
-        .get()
-        .then(snapshot => {
-          const batch = db.batch();
-          snapshot.forEach(doc => {
-            batch.delete(doc.ref);
-          });
-          return batch.commit();
-        })
-        .then(() => {
-          alert("Tous vos messages ont été supprimés.");
-        })
-        .catch(error => {
-          console.error("Erreur lors de la suppression :", error);
+      db.collection("messages").get().then(snapshot => {
+        snapshot.forEach(doc => {
+          db.collection("messages").doc(doc.id).delete();
         });
+      });
     }
 
     afficherMessages();
