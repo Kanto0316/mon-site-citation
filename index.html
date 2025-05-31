@@ -5,35 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bloc-note partagé</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       font-family: Arial, sans-serif;
       background: #f2f2f2;
       margin: 0;
-      padding: 0;
+      padding: 20px;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
     }
 
     .container {
-      background: white;
-      margin: 20px;
-      padding: 20px;
-      max-width: 600px;
       width: 100%;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      text-align: center;
-      margin-bottom: 20px;
+      max-width: 600px;
     }
 
     textarea {
@@ -41,63 +24,70 @@
       height: 120px;
       padding: 12px;
       font-size: 1rem;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
+      margin-bottom: 10px;
       border-radius: 8px;
+      border: 1px solid #ccc;
       resize: vertical;
     }
 
     button {
-      width: 100%;
-      padding: 12px;
+      padding: 10px 15px;
       font-size: 1rem;
       background-color: #007bff;
       color: white;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    ul {
-      list-style-type: none;
-      padding-left: 0;
-      margin-top: 20px;
-    }
-
-    li {
-      background: #e8e8e8;
-      margin-bottom: 10px;
-      padding: 10px;
       border-radius: 6px;
-      word-wrap: break-word;
+      cursor: pointer;
+      margin-bottom: 20px;
     }
 
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.2rem;
-      }
+    .note-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 15px;
+      margin-bottom: 15px;
+      position: relative;
+    }
 
-      textarea {
-        height: 100px;
-      }
+    .note-card:hover {
+      background: #f9f9f9;
+    }
 
-      button {
-        font-size: 0.95rem;
-        padding: 10px;
-      }
+    .note-actions {
+      margin-top: 10px;
+      display: none;
+      gap: 10px;
+    }
 
-      li {
-        font-size: 0.95rem;
-      }
+    .note-card.active .note-actions {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .note-actions button {
+      background-color: #555;
+      color: white;
+      padding: 6px;
+      font-size: 0.9rem;
+    }
+
+    .note-actions button:hover {
+      opacity: 0.8;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>📝 Bloc-note partagé</h1>
+    <h2>📝 Bloc-note partagé</h2>
     <textarea id="noteInput" placeholder="Écris une note ici..."></textarea>
     <button onclick="ajouterNote()">Ajouter</button>
-    <ul id="listeNotes"></ul>
+    <div id="notesList"></div>
   </div>
 
   <!-- Firebase SDK -->
@@ -105,6 +95,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
+    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
@@ -119,7 +110,7 @@
     const db = firebase.firestore();
 
     const noteInput = document.getElementById("noteInput");
-    const listeNotes = document.getElementById("listeNotes");
+    const notesList = document.getElementById("notesList");
 
     function ajouterNote() {
       const texte = noteInput.value.trim();
@@ -132,13 +123,49 @@
       }
     }
 
+    function supprimerNote(id) {
+      db.collection("notes").doc(id).delete();
+    }
+
+    function modifierNote(id, ancienTexte) {
+      const nouveau = prompt("Modifier la note :", ancienTexte);
+      if (nouveau !== null && nouveau.trim() !== "") {
+        db.collection("notes").doc(id).update({
+          texte: nouveau
+        });
+      }
+    }
+
+    function supprimerToutesNotes() {
+      if (confirm("Supprimer toutes les notes ?")) {
+        db.collection("notes").get().then(snapshot => {
+          snapshot.forEach(doc => {
+            db.collection("notes").doc(doc.id).delete();
+          });
+        });
+      }
+    }
+
     db.collection("notes").orderBy("date", "desc").onSnapshot(snapshot => {
-      listeNotes.innerHTML = "";
+      notesList.innerHTML = "";
       snapshot.forEach(doc => {
-        const note = doc.data().texte;
-        const li = document.createElement("li");
-        li.textContent = note;
-        listeNotes.appendChild(li);
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "note-card";
+        div.innerHTML = `
+          <div class="note-text">${data.texte}</div>
+          <div class="note-actions">
+            <button onclick="modifierNote('${doc.id}', \`${data.texte.replace(/`/g, "\\`")}\`)">✏️ Modifier</button>
+            <button onclick="supprimerNote('${doc.id}')">🗑️ Supprimer</button>
+            <button onclick="supprimerToutesNotes()">❌ Supprimer toutes</button>
+          </div>
+        `;
+
+        div.onclick = () => {
+          div.classList.toggle("active");
+        };
+
+        notesList.appendChild(div);
       });
     });
   </script>
