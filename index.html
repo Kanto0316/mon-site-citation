@@ -3,142 +3,74 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Discussion</title>
+  <title>Discussion + Emoji + Lu/Non Lu</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #eef2f3;
       margin: 0;
-      padding: 0;
       display: flex;
       justify-content: center;
     }
-
     .chat-container {
-      width: 100%;
-      max-width: 600px;
-      margin: 20px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
+      width: 100%; max-width: 600px;
+      margin: 20px; background: white;
+      border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column;
       height: 90vh;
     }
-
     .header {
-      background: #007bff;
-      color: white;
-      padding: 10px 15px;
-      font-size: 1.2em;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #007bff; color: white;
+      padding: 10px 15px; font-size: 1.2em;
+      display: flex; justify-content: space-between;
       border-radius: 10px 10px 0 0;
     }
-
-    .header .delete-top {
-      background-color: #dc3545;
-      border: none;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1em;
-    }
-
     .messages {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      display: flex;
+      flex: 1; padding: 15px;
+      overflow-y: auto; display: flex;
       flex-direction: column;
     }
-
     .message {
-      padding: 12px 18px;
-      margin: 8px 0;
-      border-radius: 20px;
-      max-width: 50%;
-      word-wrap: break-word;
-      position: relative;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      padding: 12px 18px; margin: 8px 0;
+      border-radius: 20px; max-width: 60%;
+      position: relative; word-wrap: break-word;
     }
-
-    .me {
-      background-color: #cce5ff;
-      align-self: flex-end;
-      text-align: right;
-      border-bottom-right-radius: 5px;
-    }
-
-    .other {
-      background-color: #d4edda;
-      align-self: flex-start;
-      text-align: left;
-      border-bottom-left-radius: 5px;
-    }
-
-    .message.selected {
-      outline: 3px solid red;
-      background-color: #ffe6e6 !important;
-    }
-
-    .time {
-      font-size: 0.8em;
-      color: #555;
+    .me { background: #cce5ff; align-self: flex-end; text-align: right; }
+    .other { background: #d4edda; align-self: flex-start; text-align: left; }
+    .message-footer {
+      font-size: 0.8em; color: #555;
+      display: flex; justify-content: space-between;
       margin-top: 5px;
     }
-
+    .reaction-btn { cursor: pointer; font-size: 1.2em; margin-left: 5px; }
     .input-area {
-      display: flex;
-      padding: 15px;
+      display: flex; padding: 15px;
       border-top: 1px solid #ccc;
     }
-
-    .input-area input {
-      flex: 1;
-      padding: 12px 16px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 30px;
-      background-color: #f0f0f0;
-      outline: none;
+    input {
+      flex: 1; padding: 12px 16px;
+      font-size: 1rem; border: none;
+      border-radius: 30px; background: #f0f0f0;
       margin-right: 10px;
     }
-
-    .input-area button {
-      background: none;
-      border: none;
-      font-size: 1.8rem;
-      cursor: pointer;
-    }
-
-    .input-area button:hover {
-      transform: scale(1.2);
+    button {
+      background: none; border: none;
+      font-size: 1.8rem; cursor: pointer;
     }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <div class="header">
-      <span id="usernameDisplay">Pseudo</span>
-      <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
-    </div>
-
+    <div class="header"><span id="usernameDisplay">...</span></div>
     <div class="messages" id="messages"></div>
-
     <div class="input-area">
-      <input type="text" id="messageInput" placeholder="Ton message..." />
+      <input type="text" id="messageInput" placeholder="Ton message...">
       <button onclick="envoyerMessage()">✉️</button>
     </div>
   </div>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
@@ -146,107 +78,68 @@
       projectId: "blocnotepartage",
       storageBucket: "blocnotepartage.firebasestorage.app",
       messagingSenderId: "635513565402",
-      appId: "1:635513565402:web:85b3fca4428eabad3a75e3",
-      measurementId: "G-HHTMMHCZQP"
+      appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let username = localStorage.getItem("chatUsername");
-    if (!username) {
-      username = prompt("Entrez votre pseudo :");
-      localStorage.setItem("chatUsername", username);
-    }
-    document.getElementById("usernameDisplay").textContent = "Connecté en tant que : " + username;
-
-    const messagesDiv = document.getElementById("messages");
-    const messageInput = document.getElementById("messageInput");
-    const messagesSelectionnes = new Set();
+    let username = localStorage.getItem("chatUsername") || prompt("Entrez votre pseudo :");
+    localStorage.setItem("chatUsername", username);
+    document.getElementById("usernameDisplay").textContent = "Connecté : " + username;
 
     function envoyerMessage() {
-      const texte = messageInput.value.trim();
-      if (texte !== "") {
+      const texte = document.getElementById("messageInput").value.trim();
+      if (texte) {
         db.collection("messages").add({
-          texte: texte,
+          auteur: username,
+          texte,
           date: firebase.firestore.Timestamp.now(),
-          auteur: username
+          lu: false,
+          likes: []
         });
-        messageInput.value = "";
+        document.getElementById("messageInput").value = "";
       }
+    }
+
+    function toggleLike(id, likes) {
+      const alreadyLiked = likes.includes(username);
+      db.collection("messages").doc(id).update({
+        likes: alreadyLiked ? likes.filter(l => l !== username) : [...likes, username]
+      });
     }
 
     function afficherMessages() {
       db.collection("messages").orderBy("date").onSnapshot(snapshot => {
-        messagesDiv.innerHTML = "";
+        const container = document.getElementById("messages");
+        container.innerHTML = "";
         snapshot.forEach(doc => {
-          const data = doc.data();
-          const dateObj = data.date.toDate();
-          const heure = String(dateObj.getHours()).padStart(2, '0');
-          const minute = String(dateObj.getMinutes()).padStart(2, '0');
-          const heureFormatee = `${heure}:${minute}`;
+          const msg = doc.data();
+          const id = doc.id;
+          const isMine = msg.auteur === username;
+          const heure = msg.date.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+          // Marquer comme lu si ce n'est pas le sien et pas encore vu
+          if (!isMine && !msg.lu) {
+            db.collection("messages").doc(id).update({ lu: true });
+          }
 
           const div = document.createElement("div");
-          const classe = (data.auteur === username) ? "me" : "other";
-          div.className = `message ${classe}`;
-          if (messagesSelectionnes.has(doc.id)) {
-            div.classList.add("selected");
-          }
+          div.className = `message ${isMine ? "me" : "other"}`;
 
           div.innerHTML = `
-            <div><strong>${data.auteur}</strong><br>${data.texte}</div>
-            <div class="time">${heureFormatee}</div>
-          `;
+            <div><strong>${msg.auteur}</strong><br>${msg.texte}</div>
+            <div class="message-footer">
+              <span>${heure} ${msg.lu || isMine ? '✔️' : '🕓'}</span>
+              <span class="reaction-btn" onclick="toggleLike('${id}', ${JSON.stringify(msg.likes || [])})">
+                ❤️ ${msg.likes?.length || 0}
+              </span>
+            </div>`;
 
-          if (data.auteur === username) {
-            div.onclick = () => {
-              if (messagesSelectionnes.has(doc.id)) {
-                messagesSelectionnes.delete(doc.id);
-              } else {
-                messagesSelectionnes.add(doc.id);
-              }
-              afficherMessages();
-            };
-          }
-
-          messagesDiv.appendChild(div);
+          container.appendChild(div);
         });
-
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        container.scrollTop = container.scrollHeight;
       });
     }
-
-    function supprimerMessagesSelectionnes() {
-      if (messagesSelectionnes.size === 0) {
-        alert("Aucun message sélectionné.");
-        return;
-      }
-
-      let confirmation = "Voulez-vous supprimer les messages suivants ?\n\n";
-      let listeMessages = [];
-
-      const promesses = [];
-      messagesSelectionnes.forEach(id => {
-        const promesse = db.collection("messages").doc(id).get().then(doc => {
-          const data = doc.data();
-          if (data.auteur === username) {
-            listeMessages.push(`- ${data.texte}`);
-          }
-        });
-        promesses.push(promesse);
-      });
-
-      Promise.all(promesses).then(() => {
-        confirmation += listeMessages.join("\n");
-        if (confirm(confirmation)) {
-          messagesSelectionnes.forEach(id => {
-            db.collection("messages").doc(id).delete();
-          });
-          messagesSelectionnes.clear();
-        }
-      });
-    }
-
     afficherMessages();
   </script>
 </body>
