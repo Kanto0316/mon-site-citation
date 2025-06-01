@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Test Verset Malgache</title>
+  <title>Test Verset Malgache (CodeTabs Proxy)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -42,58 +42,37 @@
   </div>
 
   <script>
-    // URL d’origine vers l’API DailyVerses
+    // URL d’origine de l’API DailyVerses (JSON en malgache)
     const originalUrl = 'https://dailyverses.net/get/random?language=mg&type=json';
-    const encodedUrl = encodeURIComponent(originalUrl);
 
-    // Liste de proxys à tester (AllOrigins CF puis AllOrigins WIN)
-    const proxies = [
-      `https://api.allorigins.cf/get?url=${encodedUrl}`,
-      `https://api.allorigins.win/get?url=${encodedUrl}`
-    ];
+    // Utilisation de CodeTabs Proxy (quest=URL_à_proxy)
+    const proxyUrl = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(originalUrl);
 
-    function fetchViaProxy(index) {
-      if (index >= proxies.length) {
+    fetch(proxyUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Erreur réseau : ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // data contient directement le JSON renvoyé par DailyVerses
+        // Exemple attendu : { text: "...", reference: "...", ... }
+        if (data.text) {
+          let contenu = data.text;
+          if (data.reference) {
+            contenu += ` — ${data.reference}`;
+          }
+          document.getElementById('verse').textContent = contenu;
+        } else {
+          throw new Error('Le champ "text" est introuvable dans la réponse JSON');
+        }
+      })
+      .catch(err => {
+        console.error(err);
         document.getElementById('verse').innerHTML =
-          `<span class="error">Impossible de charger le verset via aucun proxy.</span>`;
-        return;
-      }
-
-      const proxyUrl = proxies[index];
-      fetch(proxyUrl)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Proxy (${proxyUrl}) répond ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          // AllOrigins CF et WIN renvoient { contents: "...", status: {...} }
-          let jsonBrut;
-          try {
-            jsonBrut = JSON.parse(data.contents);
-          } catch (e) {
-            throw new Error('Impossible de parser le JSON retourné par AllOrigins');
-          }
-          if (jsonBrut.text) {
-            let contenu = jsonBrut.text;
-            if (jsonBrut.reference) {
-              contenu += ` — ${jsonBrut.reference}`;
-            }
-            document.getElementById('verse').textContent = contenu;
-          } else {
-            throw new Error('Champ "text" introuvable dans la réponse JSON');
-          }
-        })
-        .catch(err => {
-          console.warn(err.message);
-          // Si échec, on passe au proxy suivant
-          fetchViaProxy(index + 1);
-        });
-    }
-
-    // Lancer la première tentative
-    fetchViaProxy(0);
+          `<span class="error">Impossible de charger le verset.</span>`;
+      });
   </script>
 </body>
 </html>
