@@ -5,67 +5,121 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Enregistrement et Recherche Personnes</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
     body {
-      font-family: Arial, sans-serif;
-      background: #eef2f3;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
       margin: 0; padding: 0;
       display: flex;
       justify-content: center;
+      align-items: flex-start;
       min-height: 100vh;
     }
     .container {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 600px;
-      margin: 20px;
-      padding: 20px;
+      max-width: 700px;
+      margin: 40px 20px;
+      padding: 30px 40px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 25px;
+      box-sizing: border-box;
     }
     h2 {
       margin-top: 0;
       text-align: center;
+      font-weight: 600;
+      color: #33475b;
+      font-size: 1.8rem;
     }
     button {
       cursor: pointer;
       border: none;
-      background: #007bff;
+      background: #4f46e5;
       color: white;
-      padding: 10px 15px;
-      border-radius: 5px;
-      font-size: 1rem;
+      padding: 14px 25px;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
       transition: background-color 0.3s ease;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
     }
     button:hover {
-      background: #0056b3;
+      background: #4338ca;
+      box-shadow: 0 6px 15px rgba(67, 56, 202, 0.6);
     }
     input[type="text"] {
-      padding: 10px;
-      font-size: 1rem;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+      padding: 15px 18px;
+      font-size: 1.1rem;
+      border-radius: 12px;
+      border: 1.5px solid #d1d5db;
       width: 100%;
       box-sizing: border-box;
+      font-weight: 400;
+      color: #33475b;
+      transition: border-color 0.3s ease;
+      outline-offset: 2px;
+    }
+    input[type="text"]:focus {
+      border-color: #4f46e5;
+      outline: none;
+      box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);
     }
     .list-personnes {
-      max-height: 250px;
+      max-height: 400px;
       overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 10px;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: inset 0 0 8px #e5e7eb;
+      border: 1px solid #e5e7eb;
+      font-size: 1.1rem;
+      color: #33475b;
+      font-weight: 500;
     }
     .list-personnes div {
-      padding: 6px 8px;
-      border-bottom: 1px solid #eee;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e0e7ff;
+      transition: background-color 0.2s ease;
     }
     .list-personnes div:last-child {
       border-bottom: none;
     }
+    .list-personnes div:hover {
+      background-color: #e0e7ff;
+      cursor: default;
+    }
     .search-input {
-      margin-bottom: 10px;
+      margin-bottom: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px 20px;
+        margin: 20px 10px;
+      }
+      h2 {
+        font-size: 1.5rem;
+      }
+      button {
+        padding: 12px 20px;
+        font-size: 1rem;
+      }
+      input[type="text"] {
+        font-size: 1rem;
+        padding: 12px 14px;
+      }
+      .list-personnes {
+        max-height: 300px;
+        font-size: 1rem;
+        padding: 15px;
+      }
     }
   </style>
 </head>
@@ -107,7 +161,6 @@
     const listePersonnesDiv = document.getElementById("listePersonnes");
     const searchInput = document.getElementById("searchInput");
 
-    // Auth anonymement
     auth.signInAnonymously()
       .then(() => {
         chargerPersonnes();
@@ -133,7 +186,6 @@
       });
     });
 
-    // Charger et afficher personnes avec filtre
     function chargerPersonnes() {
       db.collection("personnes").orderBy("dateAjout", "desc").onSnapshot(snapshot => {
         let personnes = [];
