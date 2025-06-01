@@ -25,6 +25,10 @@
       color: #004d40;
       font-size: 1.1rem;
       line-height: 1.4;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .error {
       color: #b71c1c;
@@ -38,43 +42,58 @@
   </div>
 
   <script>
-    // URL d’origine
+    // URL d’origine vers l’API DailyVerses
     const originalUrl = 'https://dailyverses.net/get/random?language=mg&type=json';
-    // On encode dans encodeURIComponent
     const encodedUrl = encodeURIComponent(originalUrl);
-    // On utilise AllOrigins avec l’endpoint "get"
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodedUrl}`;
 
-    fetch(proxyUrl)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Erreur réseau : ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        // AllOrigins renvoie { contents: "<chaîne JSON>", status: {...} }
-        let parsed;
-        try {
-          parsed = JSON.parse(data.contents);
-        } catch (e) {
-          throw new Error('Impossible de parser le JSON renvoyé par AllOrigins');
-        }
-        // parsed devrait contenir { text: "...", reference: "...", ... }
-        if (parsed.text) {
-          let contenu = parsed.text;
-          if (parsed.reference) {
-            contenu += ` — ${parsed.reference}`;
+    // Liste de proxys à tester (AllOrigins CF puis AllOrigins WIN)
+    const proxies = [
+      `https://api.allorigins.cf/get?url=${encodedUrl}`,
+      `https://api.allorigins.win/get?url=${encodedUrl}`
+    ];
+
+    function fetchViaProxy(index) {
+      if (index >= proxies.length) {
+        document.getElementById('verse').innerHTML =
+          `<span class="error">Impossible de charger le verset via aucun proxy.</span>`;
+        return;
+      }
+
+      const proxyUrl = proxies[index];
+      fetch(proxyUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Proxy (${proxyUrl}) répond ${response.status}`);
           }
-          document.getElementById('verse').textContent = contenu;
-        } else {
-          throw new Error('Le champ "text" est introuvable dans la réponse JSON');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('verse').innerHTML = `<span class="error">Impossible de charger le verset.</span>`;
-      });
+          return response.json();
+        })
+        .then(data => {
+          // AllOrigins CF et WIN renvoient { contents: "...", status: {...} }
+          let jsonBrut;
+          try {
+            jsonBrut = JSON.parse(data.contents);
+          } catch (e) {
+            throw new Error('Impossible de parser le JSON retourné par AllOrigins');
+          }
+          if (jsonBrut.text) {
+            let contenu = jsonBrut.text;
+            if (jsonBrut.reference) {
+              contenu += ` — ${jsonBrut.reference}`;
+            }
+            document.getElementById('verse').textContent = contenu;
+          } else {
+            throw new Error('Champ "text" introuvable dans la réponse JSON');
+          }
+        })
+        .catch(err => {
+          console.warn(err.message);
+          // Si échec, on passe au proxy suivant
+          fetchViaProxy(index + 1);
+        });
+    }
+
+    // Lancer la première tentative
+    fetchViaProxy(0);
   </script>
 </body>
 </html>
