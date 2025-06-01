@@ -3,16 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Enregistrement de personnes</title>
+  <title>Enregistrement et Recherche Personnes</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
       font-family: 'Inter', sans-serif;
       background: #f4f6f8;
-      margin: 0;
-      padding: 0;
       display: flex;
       justify-content: center;
+      align-items: flex-start;
       min-height: 100vh;
     }
     .container {
@@ -20,21 +25,34 @@
       width: 100%;
       background: #ffffff;
       margin: 30px 20px;
-      padding: 20px;
+      padding: 20px 30px;
       border-radius: 16px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
     }
     h2 {
       text-align: center;
       color: #333;
+      font-size: 1.8rem;
+      font-weight: 600;
     }
     input[type="text"] {
       width: 100%;
-      padding: 14px;
-      margin-bottom: 15px;
-      border: 1.5px solid #ccc;
-      border-radius: 10px;
+      padding: 14px 18px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 12px;
       font-size: 1rem;
+      font-weight: 400;
+      color: #33475b;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      outline-offset: 2px;
+    }
+    input[type="text"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);
+      outline: none;
     }
     button {
       background: #4f46e5;
@@ -43,49 +61,145 @@
       padding: 12px 20px;
       border-radius: 10px;
       font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      align-self: flex-start;
     }
     button:hover {
       background: #4338ca;
+      box-shadow: 0 6px 15px rgba(67, 56, 202, 0.4);
+    }
+    .search-input {
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+    .list-personnes {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 5px;
     }
     .card {
-      background: #f9fafb;
-      margin-top: 15px;
-      padding: 15px;
+      background: #ffffff;
+      padding: 15px 20px;
       border-radius: 12px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
     .card:hover {
-      background: #e0e7ff;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
-    .edit-zone {
-      margin-top: 10px;
+    .card span {
+      font-size: 1.1rem;
+      color: #33475b;
+      font-weight: 500;
+    }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: #ffffff;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      width: 90%;
+      max-width: 400px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 15px;
+      position: relative;
     }
-    .edit-zone input {
-      padding: 10px;
+    .modal input[type="text"] {
       font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      padding: 12px 14px;
     }
-    .edit-zone button {
-      padding: 8px;
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+    .modal button {
+      padding: 10px 18px;
       font-size: 0.95rem;
+      align-self: flex-end;
+    }
+    .modal .btn-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: transparent;
+      color: #999;
+      font-size: 1.2rem;
+      border: none;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    .modal .btn-close:hover {
+      color: #333;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px 20px;
+        margin: 20px 10px;
+      }
+      h2 {
+        font-size: 1.5rem;
+      }
+      button {
+        padding: 10px 16px;
+        font-size: 0.95rem;
+      }
+      .card span {
+        font-size: 1rem;
+      }
+      .modal {
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
+
   <div class="container">
-    <h2>Ajouter une personne</h2>
+    <h2>Enregistrer une personne</h2>
+
     <input type="text" id="nomInput" placeholder="Nom de la personne..." />
     <button id="btnAjouter">Ajouter</button>
-    <input type="text" id="searchInput" placeholder="Recherche..." />
-    <div id="listePersonnes"></div>
+
+    <input type="text" id="searchInput" class="search-input" placeholder="Recherche instantanée..." />
+
+    <div class="list-personnes" id="listePersonnes"></div>
+  </div>
+
+  <!-- Modal pour modifier/supprimer -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="btn-close" id="btnCloseModal">&times;</button>
+      <h3>Modifier / Supprimer</h3>
+      <input type="text" id="modalNomInput" />
+      <div class="modal-buttons">
+        <button id="btnModifier">Modifier</button>
+        <button id="btnSupprimer">Supprimer</button>
+      </div>
+    </div>
   </div>
 
   <!-- Firebase -->
@@ -104,16 +218,24 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
     const nomInput = document.getElementById("nomInput");
     const btnAjouter = document.getElementById("btnAjouter");
     const searchInput = document.getElementById("searchInput");
     const listePersonnesDiv = document.getElementById("listePersonnes");
 
-    let personnes = [];
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalNomInput = document.getElementById("modalNomInput");
+    const btnModifier = document.getElementById("btnModifier");
+    const btnSupprimer = document.getElementById("btnSupprimer");
+    const btnCloseModal = document.getElementById("btnCloseModal");
 
+    let personnes = [];
+    let personneActive = null; // contient { id, nom }
+
+    // Connexion anonyme
     auth.signInAnonymously().then(() => {
       db.collection("personnes").orderBy("dateAjout", "desc")
         .onSnapshot(snapshot => {
@@ -146,15 +268,13 @@
       filtrées.forEach(p => {
         const div = document.createElement("div");
         div.className = "card";
-        div.textContent = p.nom;
+        const spanNom = document.createElement("span");
+        spanNom.textContent = p.nom;
+        div.appendChild(spanNom);
 
         div.addEventListener("click", () => {
-          div.innerHTML = `
-            <div class="edit-zone">
-              <input type="text" value="${p.nom}" id="edit-${p.id}" />
-              <button onclick="modifierNom('${p.id}')">✅ Modifier</button>
-              <button onclick="supprimer('${p.id}')">🗑 Supprimer</button>
-            </div>`;
+          personneActive = p;
+          ouvrirModal(p);
         });
 
         listePersonnesDiv.appendChild(div);
@@ -165,15 +285,39 @@
       }
     }
 
-    window.supprimer = function(id) {
-      db.collection("personnes").doc(id).delete();
+    function ouvrirModal(p) {
+      modalNomInput.value = p.nom;
+      modalOverlay.style.display = "flex";
+      modalNomInput.focus();
     }
 
-    window.modifierNom = function(id) {
-      const nouveauNom = document.getElementById(`edit-${id}`).value.trim();
-      if (nouveauNom === "") return alert("Nom vide !");
-      db.collection("personnes").doc(id).update({ nom: nouveauNom });
+    function fermerModal() {
+      modalOverlay.style.display = "none";
+      personneActive = null;
     }
+
+    btnModifier.addEventListener("click", () => {
+      const nouveauNom = modalNomInput.value.trim();
+      if (nouveauNom === "") return alert("Nom vide !");
+      db.collection("personnes").doc(personneActive.id).update({
+        nom: nouveauNom
+      }).then(() => {
+        fermerModal();
+      });
+    });
+
+    btnSupprimer.addEventListener("click", () => {
+      if (confirm("Supprimer cette personne ?")) {
+        db.collection("personnes").doc(personneActive.id).delete().then(() => {
+          fermerModal();
+        });
+      }
+    });
+
+    btnCloseModal.addEventListener("click", fermerModal);
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) fermerModal();
+    });
   </script>
 </body>
 </html>
