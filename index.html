@@ -5,68 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bonjour</title>
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #ffffff);
       height: 100vh;
-      background: linear-gradient(to right, #dbeafe, #f0fdf4);
       display: flex;
-      align-items: center;
       justify-content: center;
-      font-family: 'Segoe UI', sans-serif;
+      align-items: center;
     }
-
-    .container {
+    .bonjour {
+      font-size: 3em;
+      color: #007bff;
       text-align: center;
-      font-size: 2rem;
-      color: #333;
       padding: 20px;
-      border-radius: 12px;
-      background-color: white;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-      width: 90%;
-      max-width: 400px;
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    .firebase-info {
-      font-size: 0.8rem;
-      color: #666;
-      margin-top: 10px;
+    @media (max-width: 600px) {
+      .bonjour {
+        font-size: 2em;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    Bonjour 👋
-    <div class="firebase-info" id="firebaseInfo">Connexion...</div>
-  </div>
+  <div class="bonjour">Bonjour</div>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-
   <script>
-    // Configuration Firebase (à remplacer par la tienne si besoin)
+    // 🔧 Configuration Firebase (même que ton projet chat)
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
       projectId: "blocnotepartage",
-      storageBucket: "blocnotepartage.appspot.com",
+      storageBucket: "blocnotepartage.firebasestorage.app",
       messagingSenderId: "635513565402",
-      appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
+      appId: "1:635513565402:web:85b3fca4428eabad3a75e3",
+      measurementId: "G-HHTMMHCZQP"
     };
 
+    // 🔌 Initialisation Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // Connexion anonyme automatique
+    // 🔐 Connexion anonyme
     auth.signInAnonymously()
       .then(() => {
-        const id = auth.currentUser.uid;
-        document.getElementById("firebaseInfo").textContent = "Connecté à Firebase ✔️";
+        console.log("Connecté anonymement à Firebase.");
       })
       .catch((error) => {
-        document.getElementById("firebaseInfo").textContent = "Erreur Firebase ❌ : " + error.message;
+        console.error("Erreur Firebase :", error.message);
       });
   </script>
 </body>
