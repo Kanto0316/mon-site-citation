@@ -275,7 +275,7 @@
     let personnes = [];
     let personneActive = null;
 
-    // 1) Authentif anonyme + Firestore realtime
+    // 1) Authentification anonyme + Firestore realtime
     auth.signInAnonymously().then(() => {
       db.collection("personnes").orderBy("dateAjout", "desc")
         .onSnapshot(snapshot => {
@@ -287,11 +287,11 @@
         });
     });
 
-    // 2) Verset du jour (proxy AllOrigins + DailyVerses)
-    fetch('https://api.allorigins.win/raw?url=https://dailyverses.net/get/random?language=mg&type=json')
+    // 2) Verset du jour (proxy AllOrigins + DailyVerses, URL encodée)
+    const dailyVersesUrl = encodeURIComponent('https://dailyverses.net/get/random?language=mg&type=json');
+    fetch(`https://api.allorigins.win/raw?url=${dailyVersesUrl}`)
       .then(resp => resp.json())
       .then(data => {
-        // data.text et data.reference (par ex)
         let contenu = "";
         if (data.text) {
           contenu = data.text;
@@ -344,7 +344,7 @@
       document.body.removeChild(link);
     });
 
-    // Afficher liste en cards
+    // Afficher les cards
     function afficherPersonnes() {
       const filtre = searchInput.value.toLowerCase();
       const filtrées = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
