@@ -3,76 +3,376 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Test Verset Malgache (CodeTabs Proxy)</title>
+  <title>Enregistrement et Gestion de Personnes</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Inter', sans-serif;
       background: #f4f6f8;
       display: flex;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding-bottom: 40px;
     }
-    .verse-container {
-      background: #e0f7fa;
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: #ffffff;
+      margin: 30px 20px;
       padding: 20px 30px;
-      border-left: 5px solid #00acc1;
-      border-radius: 8px;
-      max-width: 500px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+    h2 {
       text-align: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      color: #004d40;
-      font-size: 1.1rem;
-      line-height: 1.4;
-      min-height: 60px;
+      color: #333;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 18px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 400;
+      color: #33475b;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      outline-offset: 2px;
+    }
+    input[type="text"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 8px rgba(79,70,229,0.4);
+      outline: none;
+    }
+    button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      align-self: flex-start;
+    }
+    button:hover {
+      background: #4338ca;
+      box-shadow: 0 6px 15px rgba(67,56,202,0.4);
+    }
+    .btn-export {
+      background: #10b981;
+    }
+    .btn-export:hover {
+      background: #0f9c6d;
+    }
+    .search-input {
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+    .list-personnes {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    .card {
+      background: #ffffff;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
     }
-    .error {
-      color: #b71c1c;
-      font-weight: bold;
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .card span {
+      font-size: 1.1rem;
+      color: #33475b;
+      font-weight: 500;
+    }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: #ffffff;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      width: 90%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      position: relative;
+    }
+    .modal input[type="text"] {
+      font-size: 1rem;
+      padding: 12px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .modal input[type="text"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 8px rgba(79,70,229,0.4);
+      outline: none;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+    .modal button {
+      padding: 10px 18px;
+      font-size: 0.95rem;
+    }
+    .modal .btn-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: transparent;
+      color: #999;
+      font-size: 1.2rem;
+      border: none;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    .modal .btn-close:hover {
+      color: #333;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px 20px;
+        margin: 20px 10px;
+      }
+      h2 {
+        font-size: 1.5rem;
+      }
+      button {
+        padding: 10px 16px;
+        font-size: 0.95rem;
+      }
+      .card span {
+        font-size: 1rem;
+      }
+      .modal {
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="verse" class="verse-container">
-    Chargement du verset en malgache…
+
+  <div class="container">
+    <h2>Enregistrer une personne</h2>
+
+    <input type="text" id="nomInput" placeholder="Nom de la personne..." />
+    <button id="btnAjouter">Ajouter</button>
+    <button id="btnExporter" class="btn-export">Exporter CSV</button>
+
+    <input type="text" id="searchInput" class="search-input" placeholder="Recherche instantanée..." />
+
+    <div class="list-personnes" id="listePersonnes"></div>
   </div>
 
+  <!-- Modal pour modifier/supprimer/copier -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="btn-close" id="btnCloseModal">&times;</button>
+      <h3>Modifier / Supprimer / Copier</h3>
+      <input type="text" id="modalNomInput" />
+      <div class="modal-buttons">
+        <button id="btnModifier">Modifier</button>
+        <button id="btnSupprimer">Supprimer</button>
+        <button id="btnCopier">Copier</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <script>
-    // URL d’origine de l’API DailyVerses (JSON en malgache)
-    const originalUrl = 'https://dailyverses.net/get/random?language=mg&type=json';
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
+      authDomain: "blocnotepartage.firebaseapp.com",
+      projectId: "blocnotepartage",
+      storageBucket: "blocnotepartage.appspot.com",
+      messagingSenderId: "635513565402",
+      appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
+    };
 
-    // Utilisation de CodeTabs Proxy (quest=URL_à_proxy)
-    const proxyUrl = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(originalUrl);
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    fetch(proxyUrl)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Erreur réseau : ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        // data contient directement le JSON renvoyé par DailyVerses
-        // Exemple attendu : { text: "...", reference: "...", ... }
-        if (data.text) {
-          let contenu = data.text;
-          if (data.reference) {
-            contenu += ` — ${data.reference}`;
-          }
-          document.getElementById('verse').textContent = contenu;
-        } else {
-          throw new Error('Le champ "text" est introuvable dans la réponse JSON');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('verse').innerHTML =
-          `<span class="error">Impossible de charger le verset.</span>`;
+    const nomInput = document.getElementById("nomInput");
+    const btnAjouter = document.getElementById("btnAjouter");
+    const btnExporter = document.getElementById("btnExporter");
+    const searchInput = document.getElementById("searchInput");
+    const listePersonnesDiv = document.getElementById("listePersonnes");
+
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalNomInput = document.getElementById("modalNomInput");
+    const btnModifier = document.getElementById("btnModifier");
+    const btnSupprimer = document.getElementById("btnSupprimer");
+    const btnCopier = document.getElementById("btnCopier");
+    const btnCloseModal = document.getElementById("btnCloseModal");
+
+    let personnes = [];
+    let personneActive = null; // { id, nom }
+
+    // Connexion anonyme + écoute Firestore en temps réel
+    auth.signInAnonymously().then(() => {
+      db.collection("personnes").orderBy("dateAjout", "desc")
+        .onSnapshot(snapshot => {
+          personnes = [];
+          snapshot.forEach(doc => {
+            personnes.push({ id: doc.id, ...doc.data() });
+          });
+          afficherPersonnes();
+        });
+    });
+
+    // Ajouter une personne
+    btnAjouter.addEventListener("click", () => {
+      const nom = nomInput.value.trim();
+      if (nom === "") {
+        alert("Entrez un nom valide.");
+        return;
+      }
+      db.collection("personnes").add({
+        nom: nom,
+        dateAjout: firebase.firestore.Timestamp.now()
+      }).then(() => {
+        nomInput.value = "";
+      }).catch(err => {
+        alert("Erreur ajout : " + err.message);
       });
+    });
+
+    // Recherche instantanée
+    searchInput.addEventListener("input", afficherPersonnes);
+
+    // Exporter en CSV
+    btnExporter.addEventListener("click", () => {
+      const filtre = searchInput.value.toLowerCase();
+      const filtrées = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
+      if (filtrées.length === 0) {
+        alert("Aucune personne à exporter.");
+        return;
+      }
+      let csvContent = "data:text/csv;charset=utf-8,Nom\n";
+      filtrées.forEach(p => {
+        csvContent += `"${p.nom.replace(/"/g, '""')}"\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "personnes_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // Afficher les personnes sous forme de cards
+    function afficherPersonnes() {
+      const filtre = searchInput.value.toLowerCase();
+      const filtrées = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
+      listePersonnesDiv.innerHTML = "";
+
+      filtrées.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "card";
+        const spanNom = document.createElement("span");
+        spanNom.textContent = p.nom;
+        div.appendChild(spanNom);
+
+        div.addEventListener("click", () => {
+          personneActive = p;
+          ouvrirModal(p);
+        });
+
+        listePersonnesDiv.appendChild(div);
+      });
+
+      if (filtrées.length === 0) {
+        listePersonnesDiv.innerHTML = "<i>Aucun résultat</i>";
+      }
+    }
+
+    // Ouvrir le modal pour modifier/supprimer/copier
+    function ouvrirModal(p) {
+      modalNomInput.value = p.nom;
+      modalOverlay.style.display = "flex";
+      modalNomInput.focus();
+    }
+
+    function fermerModal() {
+      modalOverlay.style.display = "none";
+      personneActive = null;
+    }
+
+    btnModifier.addEventListener("click", () => {
+      const nouveauNom = modalNomInput.value.trim();
+      if (nouveauNom === "") {
+        alert("Entrez un nom valide.");
+        return;
+      }
+      db.collection("personnes").doc(personneActive.id).update({ nom: nouveauNom })
+        .then(() => fermerModal());
+    });
+
+    btnSupprimer.addEventListener("click", () => {
+      if (confirm("Supprimer cette personne ?")) {
+        db.collection("personnes").doc(personneActive.id).delete()
+          .then(() => fermerModal());
+      }
+    });
+
+    btnCopier.addEventListener("click", () => {
+      const texteACopier = modalNomInput.value.trim();
+      if (texteACopier === "") return;
+      navigator.clipboard.writeText(texteACopier)
+        .then(() => alert(`"${texteACopier}" copié dans le presse-papiers.`))
+        .catch(err => console.error("Erreur copie :", err));
+    });
+
+    btnCloseModal.addEventListener("click", fermerModal);
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) fermerModal();
+    });
   </script>
 </body>
 </html>
