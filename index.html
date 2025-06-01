@@ -47,6 +47,9 @@
       font-size: 1rem;
       color: #004d40;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      min-height: 60px;
+      display: flex;
+      align-items: center;
     }
     input[type="text"] {
       width: 100%;
@@ -206,9 +209,10 @@
 <body>
 
   <div class="container">
-
     <!-- Verset quotidien en malgache -->
-    <div id="verseContainer" class="verse-card">Chargement du verset...</div>
+    <div id="verseContainer" class="verse-card">
+      Chargement du verset...
+    </div>
 
     <!-- Formulaire d'ajout et d'export -->
     <h2>Enregistrer une personne</h2>
@@ -271,7 +275,7 @@
     let personnes = [];
     let personneActive = null;
 
-    // 1) Authentification anonyme + Firestore realtime
+    // 1) Authentif anonyme + Firestore realtime
     auth.signInAnonymously().then(() => {
       db.collection("personnes").orderBy("dateAjout", "desc")
         .onSnapshot(snapshot => {
@@ -283,12 +287,11 @@
         });
     });
 
-    // 2) Récupérer le verset quotidien en malgache
-    fetch('https://dailyverses.net/get/random?language=mg&type=json')
+    // 2) Verset du jour (proxy AllOrigins + DailyVerses)
+    fetch('https://api.allorigins.win/raw?url=https://dailyverses.net/get/random?language=mg&type=json')
       .then(resp => resp.json())
       .then(data => {
-        // Selon la structure JSON, on affiche le texte et la référence
-        // Exemple attendu : { "id": ..., "book": "...", "chapter": "...", "verse": "...", "text": "..." }
+        // data.text et data.reference (par ex)
         let contenu = "";
         if (data.text) {
           contenu = data.text;
@@ -341,7 +344,7 @@
       document.body.removeChild(link);
     });
 
-    // Afficher les cards
+    // Afficher liste en cards
     function afficherPersonnes() {
       const filtre = searchInput.value.toLowerCase();
       const filtrées = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
@@ -367,7 +370,7 @@
       }
     }
 
-    // Modal : ouvrir / fermer / actions
+    // Modal : ouvrir/fermer/actions
     function ouvrirModal(p) {
       modalNomInput.value = p.nom;
       modalOverlay.style.display = "flex";
