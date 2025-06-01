@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Enregistrement et Export Personnes</title>
+  <title>Verset du jour + Enregistrement Personnes</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
@@ -19,6 +19,7 @@
       justify-content: center;
       align-items: flex-start;
       min-height: 100vh;
+      padding-bottom: 40px;
     }
     .container {
       max-width: 600px;
@@ -38,6 +39,15 @@
       font-size: 1.8rem;
       font-weight: 600;
     }
+    .verse-card {
+      background: #e0f7fa;
+      padding: 15px 20px;
+      border-left: 4px solid #00acc1;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #004d40;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
     input[type="text"] {
       width: 100%;
       padding: 14px 18px;
@@ -51,7 +61,7 @@
     }
     input[type="text"]:focus {
       border-color: #4f46e5;
-      box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);
+      box-shadow: 0 0 8px rgba(79,70,229,0.4);
       outline: none;
     }
     button {
@@ -68,7 +78,7 @@
     }
     button:hover {
       background: #4338ca;
-      box-shadow: 0 6px 15px rgba(67, 56, 202, 0.4);
+      box-shadow: 0 6px 15px rgba(67,56,202,0.4);
     }
     .btn-export {
       background: #10b981;
@@ -84,7 +94,7 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 15px;
-      max-height: 400px;
+      max-height: 300px;
       overflow-y: auto;
       padding-right: 5px;
     }
@@ -141,7 +151,7 @@
     }
     .modal input[type="text"]:focus {
       border-color: #4f46e5;
-      box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);
+      box-shadow: 0 0 8px rgba(79,70,229,0.4);
       outline: none;
     }
     .modal-buttons {
@@ -183,6 +193,10 @@
       .card span {
         font-size: 1rem;
       }
+      .verse-card {
+        font-size: 0.95rem;
+        padding: 12px 16px;
+      }
       .modal {
         padding: 20px;
       }
@@ -192,11 +206,15 @@
 <body>
 
   <div class="container">
-    <h2>Enregistrer une personne</h2>
 
+    <!-- Verset quotidien en malgache -->
+    <div id="verseContainer" class="verse-card">Chargement du verset...</div>
+
+    <!-- Formulaire d'ajout et d'export -->
+    <h2>Enregistrer une personne</h2>
     <input type="text" id="nomInput" placeholder="Nom de la personne..." />
     <button id="btnAjouter">Ajouter</button>
-    <button id="btnExporter" class="btn-export">Exporter</button>
+    <button id="btnExporter" class="btn-export">Exporter CSV</button>
 
     <input type="text" id="searchInput" class="search-input" placeholder="Recherche instantanée..." />
 
@@ -217,7 +235,7 @@
     </div>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -236,6 +254,7 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    const verseContainer = document.getElementById("verseContainer");
     const nomInput = document.getElementById("nomInput");
     const btnAjouter = document.getElementById("btnAjouter");
     const btnExporter = document.getElementById("btnExporter");
@@ -250,9 +269,9 @@
     const btnCloseModal = document.getElementById("btnCloseModal");
 
     let personnes = [];
-    let personneActive = null; // { id, nom }
+    let personneActive = null;
 
-    // Authentification anonyme
+    // 1) Authentification anonyme + Firestore realtime
     auth.signInAnonymously().then(() => {
       db.collection("personnes").orderBy("dateAjout", "desc")
         .onSnapshot(snapshot => {
@@ -264,10 +283,32 @@
         });
     });
 
+    // 2) Récupérer le verset quotidien en malgache
+    fetch('https://dailyverses.net/get/random?language=mg&type=json')
+      .then(resp => resp.json())
+      .then(data => {
+        // Selon la structure JSON, on affiche le texte et la référence
+        // Exemple attendu : { "id": ..., "book": "...", "chapter": "...", "verse": "...", "text": "..." }
+        let contenu = "";
+        if (data.text) {
+          contenu = data.text;
+          if (data.reference) {
+            contenu += ` — ${data.reference}`;
+          }
+        } else {
+          contenu = JSON.stringify(data);
+        }
+        verseContainer.textContent = contenu;
+      })
+      .catch(err => {
+        verseContainer.textContent = "Impossible de charger le verset.";
+        console.error(err);
+      });
+
     // Ajouter une personne
     btnAjouter.addEventListener("click", () => {
       const nom = nomInput.value.trim();
-      if (nom === "") return alert("Nom vide !");
+      if (!nom) return alert("Nom vide !");
       db.collection("personnes").add({
         nom: nom,
         dateAjout: firebase.firestore.Timestamp.now()
@@ -279,7 +320,7 @@
     // Recherche instantanée
     searchInput.addEventListener("input", afficherPersonnes);
 
-    // Exporter la liste (filtrée) en CSV
+    // Export CSV
     btnExporter.addEventListener("click", () => {
       const filtre = searchInput.value.toLowerCase();
       const filtrées = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
@@ -287,7 +328,6 @@
         alert("Aucune personne à exporter.");
         return;
       }
-      // Générer CSV
       let csvContent = "data:text/csv;charset=utf-8,Nom\n";
       filtrées.forEach(p => {
         csvContent += `"${p.nom.replace(/"/g, '""')}"\n`;
@@ -301,7 +341,7 @@
       document.body.removeChild(link);
     });
 
-    // Affichage des cards
+    // Afficher les cards
     function afficherPersonnes() {
       const filtre = searchInput.value.toLowerCase();
       const filtrées = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
@@ -327,42 +367,34 @@
       }
     }
 
-    // Ouvrir la modal pour modifier/supprimer/copier
+    // Modal : ouvrir / fermer / actions
     function ouvrirModal(p) {
       modalNomInput.value = p.nom;
       modalOverlay.style.display = "flex";
       modalNomInput.focus();
     }
-
-    // Fermer la modal
     function fermerModal() {
       modalOverlay.style.display = "none";
       personneActive = null;
     }
-
-    // Événements de la modal
     btnModifier.addEventListener("click", () => {
       const nouveauNom = modalNomInput.value.trim();
-      if (nouveauNom === "") return alert("Nom vide !");
+      if (!nouveauNom) return alert("Nom vide !");
       db.collection("personnes").doc(personneActive.id).update({ nom: nouveauNom })
         .then(() => fermerModal());
     });
-
     btnSupprimer.addEventListener("click", () => {
       if (confirm("Supprimer cette personne ?")) {
-        db.collection("personnes").doc(personneActive.id).delete()
-          .then(() => fermerModal());
+        db.collection("personnes").doc(personneActive.id).delete().then(() => fermerModal());
       }
     });
-
     btnCopier.addEventListener("click", () => {
       const texteACopier = modalNomInput.value.trim();
-      if (texteACopier === "") return;
+      if (!texteACopier) return;
       navigator.clipboard.writeText(texteACopier)
         .then(() => alert(`"${texteACopier}" copié dans le presse-papiers.`))
         .catch(err => console.error("Erreur copie :", err));
     });
-
     btnCloseModal.addEventListener("click", fermerModal);
     modalOverlay.addEventListener("click", e => {
       if (e.target === modalOverlay) fermerModal();
