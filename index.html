@@ -3,137 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Enregistrement et Recherche Personnes</title>
+  <title>Enregistrement de personnes</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-        Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-      margin: 0; padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 0;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
       min-height: 100vh;
     }
     .container {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 600px;
       width: 100%;
-      max-width: 700px;
-      margin: 40px 20px;
-      padding: 30px 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 25px;
-      box-sizing: border-box;
+      background: #ffffff;
+      margin: 30px 20px;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
     h2 {
-      margin-top: 0;
       text-align: center;
-      font-weight: 600;
-      color: #33475b;
-      font-size: 1.8rem;
+      color: #333;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 15px;
+      border: 1.5px solid #ccc;
+      border-radius: 10px;
+      font-size: 1rem;
     }
     button {
-      cursor: pointer;
-      border: none;
       background: #4f46e5;
       color: white;
-      padding: 14px 25px;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
     }
     button:hover {
       background: #4338ca;
-      box-shadow: 0 6px 15px rgba(67, 56, 202, 0.6);
     }
-    input[type="text"] {
-      padding: 15px 18px;
-      font-size: 1.1rem;
-      border-radius: 12px;
-      border: 1.5px solid #d1d5db;
-      width: 100%;
-      box-sizing: border-box;
-      font-weight: 400;
-      color: #33475b;
-      transition: border-color 0.3s ease;
-      outline-offset: 2px;
-    }
-    input[type="text"]:focus {
-      border-color: #4f46e5;
-      outline: none;
-      box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);
-    }
-    .list-personnes {
-      max-height: 400px;
-      overflow-y: auto;
+    .card {
       background: #f9fafb;
+      margin-top: 15px;
+      padding: 15px;
       border-radius: 12px;
-      padding: 20px;
-      box-shadow: inset 0 0 8px #e5e7eb;
-      border: 1px solid #e5e7eb;
-      font-size: 1.1rem;
-      color: #33475b;
-      font-weight: 500;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .list-personnes div {
-      padding: 10px 12px;
-      border-bottom: 1px solid #e0e7ff;
-      transition: background-color 0.2s ease;
+    .card:hover {
+      background: #e0e7ff;
     }
-    .list-personnes div:last-child {
-      border-bottom: none;
+    .edit-zone {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    .list-personnes div:hover {
-      background-color: #e0e7ff;
-      cursor: default;
+    .edit-zone input {
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
-    .search-input {
-      margin-bottom: 0;
-    }
-
-    /* Responsive */
-    @media (max-width: 480px) {
-      .container {
-        padding: 20px 20px;
-        margin: 20px 10px;
-      }
-      h2 {
-        font-size: 1.5rem;
-      }
-      button {
-        padding: 12px 20px;
-        font-size: 1rem;
-      }
-      input[type="text"] {
-        font-size: 1rem;
-        padding: 12px 14px;
-      }
-      .list-personnes {
-        max-height: 300px;
-        font-size: 1rem;
-        padding: 15px;
-      }
+    .edit-zone button {
+      padding: 8px;
+      font-size: 0.95rem;
     }
   </style>
 </head>
 <body>
-
   <div class="container">
-    <h2>Enregistrer une personne</h2>
-
-    <input type="text" id="nomInput" placeholder="Entrez un nom..." />
+    <h2>Ajouter une personne</h2>
+    <input type="text" id="nomInput" placeholder="Nom de la personne..." />
     <button id="btnAjouter">Ajouter</button>
-
-    <input type="text" id="searchInput" class="search-input" placeholder="Recherche instantanée..." />
-
-    <div class="list-personnes" id="listePersonnes"></div>
+    <input type="text" id="searchInput" placeholder="Recherche..." />
+    <div id="listePersonnes"></div>
   </div>
 
   <!-- Firebase -->
@@ -146,76 +98,82 @@
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
       projectId: "blocnotepartage",
-      storageBucket: "blocnotepartage.firebasestorage.app",
+      storageBucket: "blocnotepartage.appspot.com",
       messagingSenderId: "635513565402",
-      appId: "1:635513565402:web:85b3fca4428eabad3a75e3",
-      measurementId: "G-HHTMMHCZQP"
+      appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
     };
 
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
     const nomInput = document.getElementById("nomInput");
     const btnAjouter = document.getElementById("btnAjouter");
-    const listePersonnesDiv = document.getElementById("listePersonnes");
     const searchInput = document.getElementById("searchInput");
+    const listePersonnesDiv = document.getElementById("listePersonnes");
 
-    auth.signInAnonymously()
-      .then(() => {
-        chargerPersonnes();
-      })
-      .catch(error => {
-        console.error("Erreur auth:", error.code, error.message);
-        alert("Erreur de connexion Firebase: " + error.message);
-      });
+    let personnes = [];
+
+    auth.signInAnonymously().then(() => {
+      db.collection("personnes").orderBy("dateAjout", "desc")
+        .onSnapshot(snapshot => {
+          personnes = [];
+          snapshot.forEach(doc => {
+            personnes.push({ id: doc.id, ...doc.data() });
+          });
+          afficherPersonnes();
+        });
+    });
 
     btnAjouter.addEventListener("click", () => {
       const nom = nomInput.value.trim();
-      if (nom === "") {
-        alert("Entrez un nom valide.");
-        return;
-      }
+      if (nom === "") return alert("Nom vide !");
       db.collection("personnes").add({
         nom: nom,
         dateAjout: firebase.firestore.Timestamp.now()
       }).then(() => {
         nomInput.value = "";
-      }).catch(err => {
-        alert("Erreur ajout : " + err.message);
       });
     });
 
-    function chargerPersonnes() {
-      db.collection("personnes").orderBy("dateAjout", "desc").onSnapshot(snapshot => {
-        let personnes = [];
-        snapshot.forEach(doc => {
-          personnes.push({ id: doc.id, ...doc.data() });
-        });
-        afficherPersonnes(personnes);
-      });
-    }
+    searchInput.addEventListener("input", afficherPersonnes);
 
-    function afficherPersonnes(personnes) {
-      const filtre = searchInput.value.trim().toLowerCase();
+    function afficherPersonnes() {
+      const filtre = searchInput.value.toLowerCase();
+      const filtrées = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
       listePersonnesDiv.innerHTML = "";
 
-      const personnesFiltrees = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
-      if (personnesFiltrees.length === 0) {
-        listePersonnesDiv.innerHTML = "<i>Aucun résultat</i>";
-        return;
-      }
-
-      personnesFiltrees.forEach(p => {
+      filtrées.forEach(p => {
         const div = document.createElement("div");
+        div.className = "card";
         div.textContent = p.nom;
+
+        div.addEventListener("click", () => {
+          div.innerHTML = `
+            <div class="edit-zone">
+              <input type="text" value="${p.nom}" id="edit-${p.id}" />
+              <button onclick="modifierNom('${p.id}')">✅ Modifier</button>
+              <button onclick="supprimer('${p.id}')">🗑 Supprimer</button>
+            </div>`;
+        });
+
         listePersonnesDiv.appendChild(div);
       });
+
+      if (filtrées.length === 0) {
+        listePersonnesDiv.innerHTML = "<i>Aucun résultat</i>";
+      }
     }
 
-    searchInput.addEventListener("input", () => {
-      chargerPersonnes();
-    });
+    window.supprimer = function(id) {
+      db.collection("personnes").doc(id).delete();
+    }
+
+    window.modifierNom = function(id) {
+      const nouveauNom = document.getElementById(`edit-${id}`).value.trim();
+      if (nouveauNom === "") return alert("Nom vide !");
+      db.collection("personnes").doc(id).update({ nom: nouveauNom });
+    }
   </script>
 </body>
 </html>
