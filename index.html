@@ -3,85 +3,91 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Compteur Firebase</title>
+  <title>Enregistrement et Recherche Personnes</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0; padding: 0;
-    }
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #e0f7fa, #ffffff);
-      height: 100vh;
+      background: #eef2f3;
+      margin: 0; padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 600px;
+      margin: 20px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
       gap: 20px;
-      padding: 20px;
     }
-    .bonjour {
-      font-size: 3em;
-      color: #007bff;
+    h2 {
+      margin-top: 0;
       text-align: center;
-      padding: 20px;
-      border-radius: 10px;
-      background: white;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
     }
     button {
-      font-size: 1.5em;
-      padding: 15px 30px;
-      border: none;
-      border-radius: 10px;
-      background-color: #007bff;
-      color: white;
       cursor: pointer;
+      border: none;
+      background: #007bff;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-size: 1rem;
       transition: background-color 0.3s ease;
-      width: 100%;
-      max-width: 400px;
     }
     button:hover {
-      background-color: #0056b3;
+      background: #0056b3;
     }
-    .compteur {
-      font-size: 2em;
-      color: #333;
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
       width: 100%;
-      max-width: 400px;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
     }
-    @media (max-width: 600px) {
-      .bonjour {
-        font-size: 2em;
-      }
-      button {
-        font-size: 1.2em;
-      }
-      .compteur {
-        font-size: 1.5em;
-      }
+    .list-personnes {
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+    }
+    .list-personnes div {
+      padding: 6px 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .list-personnes div:last-child {
+      border-bottom: none;
+    }
+    .search-input {
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="bonjour">Bonjour</div>
-  <button id="btnClique">Clique ici</button>
-  <div class="compteur" id="compteur">Chargement...</div>
 
-  <!-- Firebase SDKs -->
+  <div class="container">
+    <h2>Enregistrer une personne</h2>
+
+    <input type="text" id="nomInput" placeholder="Entrez un nom..." />
+    <button id="btnAjouter">Ajouter</button>
+
+    <input type="text" id="searchInput" class="search-input" placeholder="Recherche instantanée..." />
+
+    <div class="list-personnes" id="listePersonnes"></div>
+  </div>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
-    // Config Firebase (même que ton projet chat)
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
@@ -92,57 +98,71 @@
       measurementId: "G-HHTMMHCZQP"
     };
 
-    // Init Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    const btnClique = document.getElementById("btnClique");
-    const compteurDiv = document.getElementById("compteur");
+    const nomInput = document.getElementById("nomInput");
+    const btnAjouter = document.getElementById("btnAjouter");
+    const listePersonnesDiv = document.getElementById("listePersonnes");
+    const searchInput = document.getElementById("searchInput");
 
-    let compteur = 0;
-
-    // Authentification anonyme
+    // Auth anonymement
     auth.signInAnonymously()
       .then(() => {
-        console.log("Connecté anonymement");
-
-        // Écoute en temps réel du compteur dans Firestore
-        db.collection("compteur").doc("clics").onSnapshot(doc => {
-          if(doc.exists) {
-            compteur = doc.data().valeur || 0;
-            compteurDiv.textContent = `Nombre de clics : ${compteur}`;
-          } else {
-            // Si le doc n'existe pas encore, on l'initialise
-            db.collection("compteur").doc("clics").set({ valeur: 0 });
-            compteurDiv.textContent = `Nombre de clics : 0`;
-            compteur = 0;
-          }
-        });
+        chargerPersonnes();
       })
       .catch(error => {
-        console.error("Erreur auth:", error.message);
-        compteurDiv.textContent = "Erreur de connexion Firebase";
+        console.error("Erreur auth:", error.code, error.message);
+        alert("Erreur de connexion Firebase: " + error.message);
       });
 
-    // Gestion du clic sur le bouton
-    btnClique.addEventListener("click", () => {
-      // Incrémente le compteur dans Firestore en transaction pour éviter conflits
-      const compteurRef = db.collection("compteur").doc("clics");
+    btnAjouter.addEventListener("click", () => {
+      const nom = nomInput.value.trim();
+      if (nom === "") {
+        alert("Entrez un nom valide.");
+        return;
+      }
+      db.collection("personnes").add({
+        nom: nom,
+        dateAjout: firebase.firestore.Timestamp.now()
+      }).then(() => {
+        nomInput.value = "";
+      }).catch(err => {
+        alert("Erreur ajout : " + err.message);
+      });
+    });
 
-      db.runTransaction(transaction => {
-        return transaction.get(compteurRef).then(doc => {
-          if (!doc.exists) {
-            transaction.set(compteurRef, { valeur: 1 });
-            return 1;
-          }
-          let nouvelleValeur = (doc.data().valeur || 0) + 1;
-          transaction.update(compteurRef, { valeur: nouvelleValeur });
-          return nouvelleValeur;
+    // Charger et afficher personnes avec filtre
+    function chargerPersonnes() {
+      db.collection("personnes").orderBy("dateAjout", "desc").onSnapshot(snapshot => {
+        let personnes = [];
+        snapshot.forEach(doc => {
+          personnes.push({ id: doc.id, ...doc.data() });
         });
-      }).catch(error => {
-        console.error("Erreur transaction:", error);
+        afficherPersonnes(personnes);
       });
+    }
+
+    function afficherPersonnes(personnes) {
+      const filtre = searchInput.value.trim().toLowerCase();
+      listePersonnesDiv.innerHTML = "";
+
+      const personnesFiltrees = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
+      if (personnesFiltrees.length === 0) {
+        listePersonnesDiv.innerHTML = "<i>Aucun résultat</i>";
+        return;
+      }
+
+      personnesFiltrees.forEach(p => {
+        const div = document.createElement("div");
+        div.textContent = p.nom;
+        listePersonnesDiv.appendChild(div);
+      });
+    }
+
+    searchInput.addEventListener("input", () => {
+      chargerPersonnes();
     });
   </script>
 </body>
