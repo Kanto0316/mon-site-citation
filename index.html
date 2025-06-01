@@ -2,21 +2,23 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bonjour</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compteur Firebase</title>
   <style>
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
     }
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(to right, #e0f7fa, #ffffff);
       height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+      gap: 20px;
+      padding: 20px;
     }
     .bonjour {
       font-size: 3em;
@@ -26,23 +28,60 @@
       border-radius: 10px;
       background: white;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
     }
-
+    button {
+      font-size: 1.5em;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+      max-width: 400px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .compteur {
+      font-size: 2em;
+      color: #333;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
     @media (max-width: 600px) {
       .bonjour {
         font-size: 2em;
+      }
+      button {
+        font-size: 1.2em;
+      }
+      .compteur {
+        font-size: 1.5em;
       }
     }
   </style>
 </head>
 <body>
   <div class="bonjour">Bonjour</div>
+  <button id="btnClique">Clique ici</button>
+  <div class="compteur" id="compteur">Chargement...</div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <script>
-    // 🔧 Configuration Firebase (même que ton projet chat)
+    // Config Firebase (même que ton projet chat)
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
@@ -53,18 +92,58 @@
       measurementId: "G-HHTMMHCZQP"
     };
 
-    // 🔌 Initialisation Firebase
+    // Init Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    // 🔐 Connexion anonyme
+    const btnClique = document.getElementById("btnClique");
+    const compteurDiv = document.getElementById("compteur");
+
+    let compteur = 0;
+
+    // Authentification anonyme
     auth.signInAnonymously()
       .then(() => {
-        console.log("Connecté anonymement à Firebase.");
+        console.log("Connecté anonymement");
+
+        // Écoute en temps réel du compteur dans Firestore
+        db.collection("compteur").doc("clics").onSnapshot(doc => {
+          if(doc.exists) {
+            compteur = doc.data().valeur || 0;
+            compteurDiv.textContent = `Nombre de clics : ${compteur}`;
+          } else {
+            // Si le doc n'existe pas encore, on l'initialise
+            db.collection("compteur").doc("clics").set({ valeur: 0 });
+            compteurDiv.textContent = `Nombre de clics : 0`;
+            compteur = 0;
+          }
+        });
       })
-      .catch((error) => {
-        console.error("Erreur Firebase :", error.message);
+      .catch(error => {
+        console.error("Erreur auth:", error.message);
+        compteurDiv.textContent = "Erreur de connexion Firebase";
       });
+
+    // Gestion du clic sur le bouton
+    btnClique.addEventListener("click", () => {
+      // Incrémente le compteur dans Firestore en transaction pour éviter conflits
+      const compteurRef = db.collection("compteur").doc("clics");
+
+      db.runTransaction(transaction => {
+        return transaction.get(compteurRef).then(doc => {
+          if (!doc.exists) {
+            transaction.set(compteurRef, { valeur: 1 });
+            return 1;
+          }
+          let nouvelleValeur = (doc.data().valeur || 0) + 1;
+          transaction.update(compteurRef, { valeur: nouvelleValeur });
+          return nouvelleValeur;
+        });
+      }).catch(error => {
+        console.error("Erreur transaction:", error);
+      });
+    });
   </script>
 </body>
 </html>
