@@ -139,7 +139,6 @@
     .modal button {
       padding: 10px 18px;
       font-size: 0.95rem;
-      align-self: flex-end;
     }
     .modal .btn-close {
       position: absolute;
@@ -189,15 +188,16 @@
     <div class="list-personnes" id="listePersonnes"></div>
   </div>
 
-  <!-- Modal pour modifier/supprimer -->
+  <!-- Modal pour modifier/supprimer/copier -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal" id="modal">
       <button class="btn-close" id="btnCloseModal">&times;</button>
-      <h3>Modifier / Supprimer</h3>
+      <h3>Modifier / Supprimer / Copier</h3>
       <input type="text" id="modalNomInput" />
       <div class="modal-buttons">
         <button id="btnModifier">Modifier</button>
         <button id="btnSupprimer">Supprimer</button>
+        <button id="btnCopier">Copier</button>
       </div>
     </div>
   </div>
@@ -230,6 +230,7 @@
     const modalNomInput = document.getElementById("modalNomInput");
     const btnModifier = document.getElementById("btnModifier");
     const btnSupprimer = document.getElementById("btnSupprimer");
+    const btnCopier = document.getElementById("btnCopier");
     const btnCloseModal = document.getElementById("btnCloseModal");
 
     let personnes = [];
@@ -312,6 +313,18 @@
           fermerModal();
         });
       }
+    });
+
+    btnCopier.addEventListener("click", () => {
+      const texteACopier = modalNomInput.value.trim();
+      if (texteACopier === "") return;
+      navigator.clipboard.writeText(texteACopier)
+        .then(() => {
+          alert(`"${texteACopier}" copié dans le presse-papiers.`);
+        })
+        .catch(err => {
+          console.error("Erreur lors de la copie :", err);
+        });
     });
 
     btnCloseModal.addEventListener("click", fermerModal);
