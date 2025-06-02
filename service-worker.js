@@ -3,13 +3,13 @@
 const CACHE_NAME = 'blocnote-cache-v3';
 const OFFLINE_PAGE = '/index.html';
 
-// Liste des ressources à mettre en cache
+// Liste des ressources à mettre en cache (avec CDN Firebase SDKs)
 const APP_SHELL = [
   OFFLINE_PAGE,
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap',
-  'firebase-app-compat.js',
-  'firebase-auth-compat.js',
-  'firebase-firestore-compat.js'
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'
 ];
 
 self.addEventListener('install', event => {
