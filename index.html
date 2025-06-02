@@ -1,17 +1,12 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bloc Note (Offline First)</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', sans-serif;
       background: #f4f6f8;
@@ -24,7 +19,7 @@
     .container {
       max-width: 600px;
       width: 100%;
-      background: #ffffff;
+      background: #fff;
       margin: 30px 20px;
       padding: 20px 30px;
       border-radius: 16px;
@@ -45,7 +40,6 @@
       border: 1.5px solid #d1d5db;
       border-radius: 12px;
       font-size: 1rem;
-      font-weight: 400;
       color: #33475b;
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
       outline-offset: 2px;
@@ -57,12 +51,11 @@
     }
     button {
       background: #4f46e5;
-      color: white;
+      color: #fff;
       border: none;
       padding: 12px 20px;
       border-radius: 10px;
       font-size: 1rem;
-      font-weight: 600;
       cursor: pointer;
       transition: background-color 0.3s ease, box-shadow 0.3s ease;
       align-self: flex-start;
@@ -74,6 +67,11 @@
     .search-input {
       margin-top: 10px;
       margin-bottom: 5px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 1rem;
+      outline-offset: 2px;
     }
     .list-notes {
       display: grid;
@@ -84,7 +82,7 @@
       padding-right: 5px;
     }
     .card {
-      background: #ffffff;
+      background: #fff;
       padding: 15px 20px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
@@ -103,8 +101,6 @@
       color: #33475b;
       font-weight: 500;
     }
-
-    /* Modal overlay */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -116,7 +112,7 @@
       z-index: 1000;
     }
     .modal {
-      background: #ffffff;
+      background: #fff;
       padding: 25px 30px;
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.15);
@@ -162,14 +158,11 @@
     .modal .btn-close:hover {
       color: #333;
     }
-
-    /* Indicateur de connexion */
     #status {
       text-align: center;
       font-size: 0.95rem;
       font-weight: 500;
     }
-
     @media (max-width: 480px) {
       .container {
         padding: 15px 20px;
