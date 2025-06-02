@@ -3,13 +3,13 @@
 const CACHE_NAME = 'blocnote-cache-v3';
 const OFFLINE_PAGE = '/index.html';
 
-// Liste des ressources essentielles à mettre en cache
+// Liste des ressources à mettre en cache
 const APP_SHELL = [
   OFFLINE_PAGE,
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'
+  'firebase-app-compat.js',
+  'firebase-auth-compat.js',
+  'firebase-firestore-compat.js'
 ];
 
 self.addEventListener('install', event => {
@@ -29,7 +29,7 @@ self.addEventListener('activate', event => {
       Promise.all(
         keys.map(key => {
           if (key !== CACHE_NAME) {
-            console.log('[SW] suppression ancien cache:', key);
+            console.log('[SW] suppression ancien cache :', key);
             return caches.delete(key);
           }
         })
@@ -41,7 +41,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
 
-  // 1. Si c'est une navigation (chargement de la page), servir index.html depuis le cache
+  // 1) Si c'est une navigation (chargement de la page), renvoyer index.html depuis le cache
   if (request.mode === 'navigate') {
     event.respondWith(
       caches.match(OFFLINE_PAGE).then(cached => {
@@ -58,7 +58,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. Pour toutes les autres requêtes (CSS, JS, images, SDKs…)
+  // 2) Pour toutes les autres requêtes (CSS/JS/images/SDKs…)
   event.respondWith(
     caches.match(request).then(cachedResponse => {
       if (cachedResponse) {
@@ -78,8 +78,7 @@ self.addEventListener('fetch', event => {
         });
         return networkResponse;
       }).catch(err => {
-        console.warn('[SW] échec fetch, pas en cache et hors ligne', err);
-        // En fallback, renvoyer la page index.html pour éviter le message d’erreur du navigateur
+        console.warn('[SW] échec fetch, ressource non trouvée dans le cache et hors ligne', err);
         return caches.match(OFFLINE_PAGE);
       });
     })
