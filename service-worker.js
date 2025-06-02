@@ -1,86 +1,472 @@
-// service-worker.js
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bloc Note (Offline First)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-const CACHE_NAME = 'blocnote-cache-v3';
-const OFFLINE_PAGE = '/index.html';
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
 
-// Liste des ressources à mettre en cache (avec CDN Firebase SDKs)
-const APP_SHELL = [
-  OFFLINE_PAGE,
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'
-];
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: #fff;
+      margin: 30px 20px;
+      padding: 20px 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
 
-self.addEventListener('install', event => {
-  console.log('[SW] install');
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
-});
+    h2 {
+      text-align: center;
+      color: #333;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
 
-self.addEventListener('activate', event => {
-  console.log('[SW] activate');
-  event.waitUntil(self.clients.claim());
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            console.log('[SW] suppression ancien cache :', key);
-            return caches.delete(key);
-          }
-        })
-      )
-    )
-  );
-});
+    form#noteForm {
+      display: flex;
+      gap: 10px;
+    }
 
-self.addEventListener('fetch', event => {
-  const request = event.request;
+    form#noteForm input[type="text"] {
+      flex: 1;
+      padding: 14px 18px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 1rem;
+      color: #33475b;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      outline-offset: 2px;
+    }
 
-  // 1) Si c'est une navigation (chargement de la page), renvoyer index.html depuis le cache
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      caches.match(OFFLINE_PAGE).then(cached => {
-        if (cached) {
-          console.log('[SW] page HTML servie depuis le cache');
-          return cached;
-        }
-        return fetch(request).catch(err => {
-          console.warn('[SW] échec réseau, renvoi index.html en fallback', err);
-          return caches.match(OFFLINE_PAGE);
-        });
-      })
-    );
-    return;
-  }
+    form#noteForm input[type="text"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 8px rgba(79,70,229,0.4);
+      outline: none;
+    }
 
-  // 2) Pour toutes les autres requêtes (CSS/JS/images/SDKs…)
-  event.respondWith(
-    caches.match(request).then(cachedResponse => {
-      if (cachedResponse) {
-        return cachedResponse;
+    form#noteForm button {
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    form#noteForm button:hover {
+      background: #4338ca;
+      box-shadow: 0 6px 15px rgba(67,56,202,0.4);
+    }
+
+    .search-input {
+      margin-top: 10px;
+      margin-bottom: 5px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 1rem;
+      outline-offset: 2px;
+    }
+
+    .list-notes {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    .card {
+      background: #fffbfb; /* Couleur pastel très douce */
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .card span {
+      font-size: 1.1rem;
+      color: #33475b;
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      width: 90%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      position: relative;
+    }
+
+    .modal input[type="text"] {
+      font-size: 1rem;
+      padding: 12px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .modal input[type="text"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 8px rgba(79,70,229,0.4);
+      outline: none;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .modal button {
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .modal .btn-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: transparent;
+      color: #999;
+      font-size: 1.2rem;
+      border: none;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .modal .btn-close:hover {
+      color: #333;
+    }
+
+    .btn-modify {
+      background: #10b981;
+      color: #fff;
+    }
+    .btn-modify:hover {
+      background: #0f9c6d;
+    }
+    .btn-delete {
+      background: #ef4444;
+      color: #fff;
+    }
+    .btn-delete:hover {
+      background: #dc2626;
+    }
+    .btn-copy {
+      background: #9ca3af;
+      color: #fff;
+    }
+    .btn-copy:hover {
+      background: #6b7280;
+    }
+
+    #status {
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px 20px;
+        margin: 20px 10px;
       }
-      return fetch(request).then(networkResponse => {
-        if (
-          !networkResponse ||
-          networkResponse.status !== 200 ||
-          networkResponse.type !== 'basic'
-        ) {
-          return networkResponse;
-        }
-        const clone = networkResponse.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(request, clone);
+      h2 {
+        font-size: 1.5rem;
+      }
+      form#noteForm input[type="text"] {
+        padding: 10px 14px;
+      }
+      form#noteForm button {
+        padding: 10px 16px;
+        font-size: 0.95rem;
+      }
+      .card span {
+        font-size: 1rem;
+      }
+      .modal {
+        padding: 20px;
+      }
+      #status {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Bloc Note</h2>
+
+    <!-- Indicateur de connexion -->
+    <div id="status" class="mb-2"></div>
+
+    <!-- Formulaire d’ajout (champ + bouton alignés) -->
+    <form id="noteForm" class="mb-4">
+      <input type="text" id="nomInput" placeholder="Écrire une note..." required>
+      <button type="submit">Ajouter</button>
+    </form>
+
+    <!-- Champ de recherche -->
+    <input type="text" id="searchInput" class="search-input" placeholder="Recherche instantanée...">
+
+    <!-- Liste des notes -->
+    <div class="list-notes" id="listePersonnes"></div>
+  </div>
+
+  <!-- Modal pour modifier/supprimer/copier -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="btn-close" id="btnCloseModal">&times;</button>
+      <h3>Modifier / Supprimer / Copier</h3>
+      <input type="text" id="modalNomInput" placeholder="Modifier la note..." />
+      <div class="modal-buttons">
+        <button id="btnModifier" class="btn-modify">Modifier</button>
+        <button id="btnSupprimer" class="btn-delete">Supprimer</button>
+        <button id="btnCopier" class="btn-copy">Copier</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs depuis le CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Votre configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
+      authDomain: "blocnotepartage.firebaseapp.com",
+      projectId: "blocnotepartage",
+      storageBucket: "blocnotepartage.appspot.com",
+      messagingSenderId: "635513565402",
+      appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
+    };
+
+    // Initialisation Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Activer la persistance hors ligne
+    db.enablePersistence().catch(err => {
+      if (err.code === 'failed-precondition') {
+        console.warn("Persistence non disponible (plusieurs onglets ouverts)");
+      } else if (err.code === 'unimplemented') {
+        console.warn("Persistence non supportée par ce navigateur");
+      }
+    });
+
+    // Références DOM
+    const noteForm = document.getElementById("noteForm");
+    const nomInput = document.getElementById("nomInput");
+    const searchInput = document.getElementById("searchInput");
+    const listePersonnesDiv = document.getElementById("listePersonnes");
+    const status = document.getElementById("status");
+
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalNomInput = document.getElementById("modalNomInput");
+    const btnModifier = document.getElementById("btnModifier");
+    const btnSupprimer = document.getElementById("btnSupprimer");
+    const btnCopier = document.getElementById("btnCopier");
+    const btnCloseModal = document.getElementById("btnCloseModal");
+
+    let personnes = [];
+    let personneActive = null; // { id, nom }
+
+    // Gérer l'état de la connexion
+    window.addEventListener("online", () => updateStatus(true));
+    window.addEventListener("offline", () => updateStatus(false));
+
+    function updateStatus(isOnline) {
+      status.textContent = isOnline
+        ? "✅ Connecté à Internet (synchronisation active)"
+        : "⚠️ Mode hors ligne - les données seront synchronisées automatiquement";
+      status.className = isOnline ? "text-green-600 mb-2" : "text-orange-500 mb-2";
+    }
+    // Initialiser l’état
+    updateStatus(navigator.onLine);
+
+    // Authentification anonyme (pour Firestore)
+    auth.signInAnonymously().catch(err => {
+      console.error("Erreur d'authentification", err);
+    });
+
+    // Écoute en temps réel de la collection "personnes" (notes)
+    db.collection("personnes").orderBy("dateAjout", "desc")
+      .onSnapshot(snapshot => {
+        personnes = [];
+        snapshot.forEach(doc => {
+          personnes.push({ id: doc.id, ...doc.data() });
         });
-        return networkResponse;
-      }).catch(err => {
-        console.warn('[SW] échec fetch, ressource non trouvée dans le cache et hors ligne', err);
-        return caches.match(OFFLINE_PAGE);
+        afficherPersonnes();
       });
-    })
-  );
-});
+
+    // Soumission du formulaire d’ajout (nouvelle note)
+    noteForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nom = nomInput.value.trim();
+      if (nom === "") {
+        alert("Écris une note valide.");
+        return;
+      }
+      try {
+        await db.collection("personnes").add({
+          nom,
+          dateAjout: firebase.firestore.Timestamp.now()
+        });
+        nomInput.value = "";
+      } catch (err) {
+        alert("Erreur ajout : " + err.message);
+      }
+    });
+
+    // Recherche instantanée
+    searchInput.addEventListener("input", afficherPersonnes);
+
+    // Afficher les notes sous forme de cards
+    function afficherPersonnes() {
+      const filtre = searchInput.value.toLowerCase();
+      const filtrées = personnes.filter(p =>
+        p.nom.toLowerCase().includes(filtre)
+      );
+      listePersonnesDiv.innerHTML = "";
+
+      if (filtrées.length === 0) {
+        listePersonnesDiv.innerHTML = "<i>Aucune note trouvée</i>";
+        return;
+      }
+
+      filtrées.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "card";
+        const spanNom = document.createElement("span");
+        spanNom.textContent = p.nom;
+        div.appendChild(spanNom);
+
+        div.addEventListener("click", () => {
+          personneActive = p;
+          ouvrirModal(p);
+        });
+
+        listePersonnesDiv.appendChild(div);
+      });
+    }
+
+    // Ouvrir le modal pour modifier/supprimer/copier
+    function ouvrirModal(p) {
+      modalNomInput.value = p.nom;
+      modalOverlay.style.display = "flex";
+      modalNomInput.focus();
+    }
+
+    function fermerModal() {
+      modalOverlay.style.display = "none";
+      personneActive = null;
+    }
+
+    btnModifier.addEventListener("click", async () => {
+      const nouveauNom = modalNomInput.value.trim();
+      if (nouveauNom === "") {
+        alert("Écris une note valide.");
+        return;
+      }
+      try {
+        await db.collection("personnes").doc(personneActive.id).update({
+          nom: nouveauNom
+        });
+        fermerModal();
+      } catch (err) {
+        alert("Erreur modification : " + err.message);
+      }
+    });
+
+    btnSupprimer.addEventListener("click", async () => {
+      // Suppression directe sans confirmation
+      if (personneActive) {
+        try {
+          await db.collection("personnes").doc(personneActive.id).delete();
+          fermerModal();
+        } catch (err) {
+          alert("Erreur suppression : " + err.message);
+        }
+      }
+    });
+
+    btnCopier.addEventListener("click", () => {
+      const texteACopier = modalNomInput.value.trim();
+      if (texteACopier === "") return;
+      navigator.clipboard.writeText(texteACopier)
+        .then(() => alert(`"${texteACopier}" copié dans le presse-papiers.`))
+        .catch(err => console.error("Erreur copie :", err));
+    });
+
+    btnCloseModal.addEventListener("click", fermerModal);
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) fermerModal();
+    });
+  </script>
+
+  <!-- Enregistrement du Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('Service Worker enregistré :', reg.scope))
+          .catch(err => console.warn('Échec enregistrement Service Worker :', err));
+      });
+    }
+  </script>
+
+</body>
+</html>
