@@ -222,13 +222,13 @@
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDKs en local (téléchargez-les depuis gstatic.com et placez-les ici) -->
+  <script src="firebase-app-compat.js"></script>
+  <script src="firebase-auth-compat.js"></script>
+  <script src="firebase-firestore-compat.js"></script>
 
   <script>
-    // Ta configuration Firebase exacte
+    // Votre configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
@@ -401,13 +401,13 @@
     });
   </script>
 
-  <!-- Enregistrement du Service Worker -->
+  <!-- Enregistrement du Service Worker (chemin relatif sans slash initial) -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
           .then(reg => console.log('Service Worker enregistré :', reg.scope))
-          .catch(err => console.warn('Échec enregistrement du Service Worker :', err));
+          .catch(err => console.warn('Échec enregistrement Service Worker :', err));
       });
     }
   </script>
