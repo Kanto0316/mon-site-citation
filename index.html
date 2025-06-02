@@ -209,7 +209,7 @@
     </form>
 
     <!-- Champ de recherche -->
-    <input type="text" id="searchInput" class="search-input border p-2 rounded w-full" placeholder="Recherche instantanée...">
+    <input type="text" id="searchInput" class="border p-2 rounded w-full search-input" placeholder="Recherche instantanée...">
 
     <!-- Liste des notes -->
     <div class="list-notes" id="listePersonnes"></div>
@@ -286,7 +286,7 @@
         : "⚠️ Mode hors ligne - les données seront synchronisées automatiquement";
       status.className = isOnline ? "text-green-600 mb-2" : "text-orange-500 mb-2";
     }
-    // Initialiser l’état au chargement
+    // Initialiser l’état
     updateStatus(navigator.onLine);
 
     // Authentification anonyme (pour Firestore)
@@ -407,5 +407,17 @@
       if (e.target === modalOverlay) fermerModal();
     });
   </script>
+
+  <!-- Enregistrement du Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('Service Worker enregistré :', reg.scope))
+          .catch(err => console.warn('Échec enregistrement du Service Worker :', err));
+      });
+    }
+  </script>
+
 </body>
 </html>
