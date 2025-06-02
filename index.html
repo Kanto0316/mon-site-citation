@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Enregistrement et Gestion de Personnes (Offline First)</title>
+  <title>Bloc Note (Offline First)</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
@@ -71,17 +71,11 @@
       background: #4338ca;
       box-shadow: 0 6px 15px rgba(67,56,202,0.4);
     }
-    .btn-export {
-      background: #10b981;
-    }
-    .btn-export:hover {
-      background: #0f9c6d;
-    }
     .search-input {
       margin-top: 10px;
       margin-bottom: 5px;
     }
-    .list-personnes {
+    .list-notes {
       display: grid;
       grid-template-columns: 1fr;
       gap: 15px;
@@ -203,23 +197,22 @@
 <body>
 
   <div class="container">
-    <h2>Enregistrer une personne</h2>
+    <h2>Bloc Note</h2>
 
     <!-- Indicateur de connexion -->
     <div id="status" class="mb-2"></div>
 
     <!-- Formulaire d’ajout -->
-    <form id="personForm" class="mb-4 flex gap-2">
-      <input type="text" id="nomInput" class="border p-2 rounded w-full" placeholder="Nom de la personne..." required>
+    <form id="noteForm" class="mb-4 flex gap-2">
+      <input type="text" id="nomInput" class="border p-2 rounded w-full" placeholder="Écrire une note..." required>
       <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded">Ajouter</button>
-      <button type="button" id="btnExporter" class="btn-export ml-2">Exporter CSV</button>
     </form>
 
     <!-- Champ de recherche -->
     <input type="text" id="searchInput" class="search-input border p-2 rounded w-full" placeholder="Recherche instantanée...">
 
-    <!-- Liste des personnes -->
-    <div class="list-personnes" id="listePersonnes"></div>
+    <!-- Liste des notes -->
+    <div class="list-notes" id="listePersonnes"></div>
   </div>
 
   <!-- Modal pour modifier/supprimer/copier -->
@@ -227,7 +220,7 @@
     <div class="modal" id="modal">
       <button class="btn-close" id="btnCloseModal">&times;</button>
       <h3>Modifier / Supprimer / Copier</h3>
-      <input type="text" id="modalNomInput" placeholder="Nouveau nom..." />
+      <input type="text" id="modalNomInput" placeholder="Modifier la note..." />
       <div class="modal-buttons">
         <button id="btnModifier" class="bg-green-500 hover:bg-green-600 text-white rounded">Modifier</button>
         <button id="btnSupprimer" class="bg-red-500 hover:bg-red-600 text-white rounded">Supprimer</button>
@@ -267,9 +260,8 @@
     });
 
     // Références DOM
-    const personForm = document.getElementById("personForm");
+    const noteForm = document.getElementById("noteForm");
     const nomInput = document.getElementById("nomInput");
-    const btnExporter = document.getElementById("btnExporter");
     const searchInput = document.getElementById("searchInput");
     const listePersonnesDiv = document.getElementById("listePersonnes");
     const status = document.getElementById("status");
@@ -302,7 +294,7 @@
       console.error("Erreur d'authentification", err);
     });
 
-    // Écoute en temps réel de la collection "personnes"
+    // Écoute en temps réel de la collection "personnes" (notes)
     db.collection("personnes").orderBy("dateAjout", "desc")
       .onSnapshot(snapshot => {
         personnes = [];
@@ -312,12 +304,12 @@
         afficherPersonnes();
       });
 
-    // Soumission du formulaire d’ajout
-    personForm.addEventListener("submit", async (e) => {
+    // Soumission du formulaire d’ajout (nouvelle note)
+    noteForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const nom = nomInput.value.trim();
       if (nom === "") {
-        alert("Entrez un nom valide.");
+        alert("Écris une note valide.");
         return;
       }
       try {
@@ -334,30 +326,7 @@
     // Recherche instantanée
     searchInput.addEventListener("input", afficherPersonnes);
 
-    // Exporter en CSV
-    btnExporter.addEventListener("click", () => {
-      const filtre = searchInput.value.toLowerCase();
-      const filtrées = personnes.filter(p =>
-        p.nom.toLowerCase().includes(filtre)
-      );
-      if (filtrées.length === 0) {
-        alert("Aucune personne à exporter.");
-        return;
-      }
-      let csvContent = "data:text/csv;charset=utf-8,Nom\n";
-      filtrées.forEach(p => {
-        csvContent += `"${p.nom.replace(/"/g, '""')}"\n`;
-      });
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "personnes_export.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
-
-    // Afficher les personnes sous forme de cards
+    // Afficher les notes sous forme de cards
     function afficherPersonnes() {
       const filtre = searchInput.value.toLowerCase();
       const filtrées = personnes.filter(p =>
@@ -366,7 +335,7 @@
       listePersonnesDiv.innerHTML = "";
 
       if (filtrées.length === 0) {
-        listePersonnesDiv.innerHTML = "<i>Aucun résultat</i>";
+        listePersonnesDiv.innerHTML = "<i>Aucune note trouvée</i>";
         return;
       }
 
@@ -401,7 +370,7 @@
     btnModifier.addEventListener("click", async () => {
       const nouveauNom = modalNomInput.value.trim();
       if (nouveauNom === "") {
-        alert("Entrez un nom valide.");
+        alert("Écris une note valide.");
         return;
       }
       try {
@@ -415,7 +384,7 @@
     });
 
     btnSupprimer.addEventListener("click", async () => {
-      if (confirm("Supprimer cette personne ?")) {
+      if (confirm("Supprimer cette note ?")) {
         try {
           await db.collection("personnes").doc(personneActive.id).delete();
           fermerModal();
