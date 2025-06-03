@@ -7,7 +7,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: 'Inter', sans-serif;
       background: #f4f6f8;
@@ -17,7 +16,6 @@
       min-height: 100vh;
       padding-bottom: 40px;
     }
-
     .container {
       max-width: 600px;
       width: 100%;
@@ -28,23 +26,16 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 25px;
     }
-
     h2 {
       text-align: center;
       color: #333;
       font-size: 1.8rem;
       font-weight: 600;
     }
-
-    form#noteForm {
-      display: flex;
-      gap: 10px;
-    }
-
-    form#noteForm input[type="text"] {
-      flex: 1;
+    input[type="text"] {
+      width: 100%;
       padding: 14px 18px;
       border: 1.5px solid #d1d5db;
       border-radius: 12px;
@@ -53,29 +44,26 @@
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
       outline-offset: 2px;
     }
-
-    form#noteForm input[type="text"]:focus {
+    input[type="text"]:focus {
       border-color: #4f46e5;
       box-shadow: 0 0 8px rgba(79,70,229,0.4);
       outline: none;
     }
-
-    form#noteForm button {
+    button {
       background: #4f46e5;
       color: #fff;
       border: none;
-      padding: 14px 24px;
-      border-radius: 12px;
+      padding: 12px 20px;
+      border-radius: 10px;
       font-size: 1rem;
       cursor: pointer;
       transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      align-self: flex-start;
     }
-
-    form#noteForm button:hover {
+    button:hover {
       background: #4338ca;
       box-shadow: 0 6px 15px rgba(67,56,202,0.4);
     }
-
     .search-input {
       margin-top: 10px;
       margin-bottom: 5px;
@@ -85,7 +73,6 @@
       font-size: 1rem;
       outline-offset: 2px;
     }
-
     .list-notes {
       display: grid;
       grid-template-columns: 1fr;
@@ -94,9 +81,8 @@
       overflow-y: auto;
       padding-right: 5px;
     }
-
     .card {
-      background: #fffbfb; /* Couleur pastel très douce */
+      background: #fff;
       padding: 15px 20px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
@@ -106,19 +92,15 @@
       align-items: center;
       justify-content: space-between;
     }
-
     .card:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
-
     .card span {
       font-size: 1.1rem;
       color: #33475b;
       font-weight: 500;
-      word-break: break-word;
     }
-
     .modal-overlay {
       display: none;
       position: fixed;
@@ -129,7 +111,6 @@
       align-items: center;
       z-index: 1000;
     }
-
     .modal {
       background: #fff;
       padding: 25px 30px;
@@ -142,7 +123,6 @@
       gap: 15px;
       position: relative;
     }
-
     .modal input[type="text"] {
       font-size: 1rem;
       padding: 12px 14px;
@@ -150,28 +130,21 @@
       border-radius: 8px;
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
-
     .modal input[type="text"]:focus {
       border-color: #4f46e5;
       box-shadow: 0 0 8px rgba(79,70,229,0.4);
       outline: none;
     }
-
     .modal-buttons {
       display: flex;
       gap: 10px;
       justify-content: flex-end;
       margin-top: 10px;
     }
-
     .modal button {
       padding: 10px 18px;
       font-size: 0.95rem;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
     }
-
     .modal .btn-close {
       position: absolute;
       top: 10px; right: 10px;
@@ -182,39 +155,14 @@
       cursor: pointer;
       transition: color 0.2s ease;
     }
-
     .modal .btn-close:hover {
       color: #333;
     }
-
-    .btn-modify {
-      background: #10b981;
-      color: #fff;
-    }
-    .btn-modify:hover {
-      background: #0f9c6d;
-    }
-    .btn-delete {
-      background: #ef4444;
-      color: #fff;
-    }
-    .btn-delete:hover {
-      background: #dc2626;
-    }
-    .btn-copy {
-      background: #9ca3af;
-      color: #fff;
-    }
-    .btn-copy:hover {
-      background: #6b7280;
-    }
-
     #status {
       text-align: center;
       font-size: 0.95rem;
       font-weight: 500;
     }
-
     @media (max-width: 480px) {
       .container {
         padding: 15px 20px;
@@ -223,10 +171,7 @@
       h2 {
         font-size: 1.5rem;
       }
-      form#noteForm input[type="text"] {
-        padding: 10px 14px;
-      }
-      form#noteForm button {
+      button {
         padding: 10px 16px;
         font-size: 0.95rem;
       }
@@ -250,14 +195,14 @@
     <!-- Indicateur de connexion -->
     <div id="status" class="mb-2"></div>
 
-    <!-- Formulaire d’ajout (champ + bouton alignés) -->
-    <form id="noteForm" class="mb-4">
-      <input type="text" id="nomInput" placeholder="Écrire une note..." required>
-      <button type="submit">Ajouter</button>
+    <!-- Formulaire d’ajout -->
+    <form id="noteForm" class="mb-4 flex gap-2">
+      <input type="text" id="nomInput" class="border p-2 rounded w-full" placeholder="Écrire une note..." required>
+      <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded">Ajouter</button>
     </form>
 
     <!-- Champ de recherche -->
-    <input type="text" id="searchInput" class="search-input" placeholder="Recherche instantanée...">
+    <input type="text" id="searchInput" class="border p-2 rounded w-full search-input" placeholder="Recherche instantanée...">
 
     <!-- Liste des notes -->
     <div class="list-notes" id="listePersonnes"></div>
@@ -270,9 +215,9 @@
       <h3>Modifier / Supprimer / Copier</h3>
       <input type="text" id="modalNomInput" placeholder="Modifier la note..." />
       <div class="modal-buttons">
-        <button id="btnModifier" class="btn-modify">Modifier</button>
-        <button id="btnSupprimer" class="btn-delete">Supprimer</button>
-        <button id="btnCopier" class="btn-copy">Copier</button>
+        <button id="btnModifier" class="bg-green-500 hover:bg-green-600 text-white rounded">Modifier</button>
+        <button id="btnSupprimer" class="bg-red-500 hover:bg-red-600 text-white rounded">Supprimer</button>
+        <button id="btnCopier" class="bg-gray-500 hover:bg-gray-600 text-white rounded">Copier</button>
       </div>
     </div>
   </div>
@@ -432,8 +377,7 @@
     });
 
     btnSupprimer.addEventListener("click", async () => {
-      // Suppression directe sans confirmation
-      if (personneActive) {
+      if (confirm("Supprimer cette note ?")) {
         try {
           await db.collection("personnes").doc(personneActive.id).delete();
           fermerModal();
