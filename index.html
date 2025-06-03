@@ -208,6 +208,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
+    // Configuration Firebase (inchangée)
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
@@ -217,8 +218,8 @@
       appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
     };
 
+    // Initialisation de Firebase
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
 
     const nomInput = document.getElementById("nomInput");
@@ -234,37 +235,49 @@
     const btnCloseModal = document.getElementById("btnCloseModal");
 
     let personnes = [];
-    let personneActive = null; // contient { id, nom }
+    let personneActive = null; // contiendra { id, nom }
 
-    // Connexion anonyme
-    auth.signInAnonymously().then(() => {
-      db.collection("personnes").orderBy("dateAjout", "desc")
-        .onSnapshot(snapshot => {
-          personnes = [];
-          snapshot.forEach(doc => {
-            personnes.push({ id: doc.id, ...doc.data() });
-          });
-          afficherPersonnes();
+    // **Écoute en temps réel de la collection "personnes"**
+    db.collection("personnes")
+      .orderBy("dateAjout", "desc")
+      .onSnapshot(snapshot => {
+        personnes = [];
+        snapshot.forEach(doc => {
+          personnes.push({ id: doc.id, ...doc.data() });
         });
-    });
+        afficherPersonnes();
+      }, err => {
+        console.error("Erreur onSnapshot :", err);
+      });
 
+    // Ajouter une nouvelle personne
     btnAjouter.addEventListener("click", () => {
       const nom = nomInput.value.trim();
-      if (nom === "") return alert("Nom vide !");
+      if (nom === "") {
+        return alert("Entrez un nom valide.");
+      }
       db.collection("personnes").add({
         nom: nom,
         dateAjout: firebase.firestore.Timestamp.now()
       }).then(() => {
         nomInput.value = "";
+      }).catch(err => {
+        alert("Erreur lors de l'ajout : " + err.message);
       });
     });
 
+    // Recherche instantanée
     searchInput.addEventListener("input", afficherPersonnes);
 
     function afficherPersonnes() {
       const filtre = searchInput.value.toLowerCase();
       const filtrées = personnes.filter(p => p.nom.toLowerCase().includes(filtre));
       listePersonnesDiv.innerHTML = "";
+
+      if (filtrées.length === 0) {
+        listePersonnesDiv.innerHTML = "<i>Aucun résultat</i>";
+        return;
+      }
 
       filtrées.forEach(p => {
         const div = document.createElement("div");
@@ -280,10 +293,6 @@
 
         listePersonnesDiv.appendChild(div);
       });
-
-      if (filtrées.length === 0) {
-        listePersonnesDiv.innerHTML = "<i>Aucun résultat</i>";
-      }
     }
 
     function ouvrirModal(p) {
@@ -299,36 +308,36 @@
 
     btnModifier.addEventListener("click", () => {
       const nouveauNom = modalNomInput.value.trim();
-      if (nouveauNom === "") return alert("Nom vide !");
+      if (nouveauNom === "") {
+        return alert("Entrez un nom valide.");
+      }
       db.collection("personnes").doc(personneActive.id).update({
         nom: nouveauNom
       }).then(() => {
         fermerModal();
+      }).catch(err => {
+        alert("Erreur lors de la modification : " + err.message);
       });
     });
 
     btnSupprimer.addEventListener("click", () => {
-      if (confirm("Supprimer cette personne ?")) {
-        db.collection("personnes").doc(personneActive.id).delete().then(() => {
-          fermerModal();
-        });
-      }
+      // Suppression immédiate (sans confirmation)
+      if (!personneActive) return;
+      db.collection("personnes").doc(personneActive.id).delete()
+        .then(() => fermerModal())
+        .catch(err => alert("Erreur lors de la suppression : " + err.message));
     });
 
     btnCopier.addEventListener("click", () => {
       const texteACopier = modalNomInput.value.trim();
       if (texteACopier === "") return;
       navigator.clipboard.writeText(texteACopier)
-        .then(() => {
-          alert(`"${texteACopier}" copié dans le presse-papiers.`);
-        })
-        .catch(err => {
-          console.error("Erreur lors de la copie :", err);
-        });
+        .then(() => alert(`"${texteACopier}" copié dans le presse-papiers.`))
+        .catch(err => console.error("Erreur de copie :", err));
     });
 
     btnCloseModal.addEventListener("click", fermerModal);
-    modalOverlay.addEventListener("click", (e) => {
+    modalOverlay.addEventListener("click", e => {
       if (e.target === modalOverlay) fermerModal();
     });
   </script>
