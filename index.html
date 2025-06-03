@@ -1,416 +1,331 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bloc Note (Offline First)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Discussion</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Inter', sans-serif;
-      background: #f4f6f8;
+      font-family: Arial, sans-serif;
+      background: #eef2f3;
+      margin: 0;
+      padding: 0;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      padding-bottom: 40px;
     }
-    .container {
+
+    .chat-container {
+      width: 100%;
       max-width: 600px;
-      width: 100%;
-      background: #fff;
-      margin: 30px 20px;
-      padding: 20px 30px;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 25px;
-    }
-    h2 {
-      text-align: center;
-      color: #333;
-      font-size: 1.8rem;
-      font-weight: 600;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 14px 18px;
-      border: 1.5px solid #d1d5db;
-      border-radius: 12px;
-      font-size: 1rem;
-      color: #33475b;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-      outline-offset: 2px;
-    }
-    input[type="text"]:focus {
-      border-color: #4f46e5;
-      box-shadow: 0 0 8px rgba(79,70,229,0.4);
-      outline: none;
-    }
-    button {
-      background: #4f46e5;
-      color: #fff;
-      border: none;
-      padding: 12px 20px;
+      margin: 20px;
+      background: white;
       border-radius: 10px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background-color 0.3s ease, box-shadow 0.3s ease;
-      align-self: flex-start;
-    }
-    button:hover {
-      background: #4338ca;
-      box-shadow: 0 6px 15px rgba(67,56,202,0.4);
-    }
-    .search-input {
-      margin-top: 10px;
-      margin-bottom: 5px;
-      border: 1.5px solid #d1d5db;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 1rem;
-      outline-offset: 2px;
-    }
-    .list-notes {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 15px;
-      max-height: 300px;
-      overflow-y: auto;
-      padding-right: 5px;
-    }
-    .card {
-      background: #fff;
-      padding: 15px 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-    .card span {
-      font-size: 1.1rem;
-      color: #33475b;
-      font-weight: 500;
-    }
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    .modal {
-      background: #fff;
-      padding: 25px 30px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-      width: 90%;
-      max-width: 400px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
-      gap: 15px;
-      position: relative;
+      height: 90vh;
     }
-    .modal input[type="text"] {
-      font-size: 1rem;
-      padding: 12px 14px;
-      border: 1.5px solid #d1d5db;
-      border-radius: 8px;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-    .modal input[type="text"]:focus {
-      border-color: #4f46e5;
-      box-shadow: 0 0 8px rgba(79,70,229,0.4);
-      outline: none;
-    }
-    .modal-buttons {
+
+    .header {
+      background: #007bff;
+      color: white;
+      padding: 10px 15px;
+      font-size: 1.2em;
       display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-top: 10px;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 10px 10px 0 0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
-    .modal button {
-      padding: 10px 18px;
-      font-size: 0.95rem;
-    }
-    .modal .btn-close {
-      position: absolute;
-      top: 10px; right: 10px;
-      background: transparent;
-      color: #999;
-      font-size: 1.2rem;
+
+    .header .delete-top {
+      background-color: #dc3545;
       border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: color 0.2s ease;
+      font-size: 1em;
     }
-    .modal .btn-close:hover {
-      color: #333;
+
+    .messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
-    #status {
-      text-align: center;
-      font-size: 0.95rem;
-      font-weight: 500;
+
+    .message-container {
+      display: flex;
+      align-items: flex-start;
+      margin: 8px 0;
     }
-    @media (max-width: 480px) {
-      .container {
-        padding: 15px 20px;
-        margin: 20px 10px;
-      }
-      h2 {
-        font-size: 1.5rem;
-      }
-      button {
-        padding: 10px 16px;
-        font-size: 0.95rem;
-      }
-      .card span {
-        font-size: 1rem;
-      }
-      .modal {
-        padding: 20px;
-      }
-      #status {
-        font-size: 0.9rem;
-      }
+
+    .avatar-bubble {
+      width: 28px;
+      height: 28px;
+      background-color: #007bff;
+      color: white;
+      border-radius: 50%;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .message {
+      padding: 12px 18px;
+      border-radius: 20px;
+      max-width: 60%;
+      word-wrap: break-word;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .me {
+      background-color: #cce5ff;
+      align-self: flex-end;
+      text-align: right;
+      border-bottom-right-radius: 5px;
+      margin-left: auto;
+    }
+
+    .other {
+      background-color: #d4edda;
+      align-self: flex-start;
+      text-align: left;
+      border-bottom-left-radius: 5px;
+    }
+
+    .message.selected {
+      outline: 3px solid red;
+      background-color: #ffe6e6 !important;
+    }
+
+    .reaction {
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 1.1em;
+      color: #e0245e;
+      user-select: none;
+    }
+
+    .reaction span {
+      cursor: pointer;
+    }
+
+    .time {
+      font-size: 0.8em;
+      color: #555;
+      margin-top: 5px;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 15px;
+      border-top: 1px solid #ccc;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 30px;
+      background-color: #f0f0f0;
+      outline: none;
+      margin-right: 10px;
+    }
+
+    .input-area button {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+    }
+
+    .input-area button:hover {
+      transform: scale(1.2);
     }
   </style>
 </head>
 <body>
+  <div class="chat-container">
+    <div class="header">
+      <span id="usernameDisplay">Pseudo</span>
+      <button class="delete-top" onclick="supprimerMessagesSelectionnes()">🗑️</button>
+    </div>
 
-  <div class="container">
-    <h2>Bloc Note</h2>
+    <div class="messages" id="messages"></div>
 
-    <!-- Indicateur de connexion -->
-    <div id="status" class="mb-2"></div>
-
-    <!-- Formulaire d’ajout -->
-    <form id="noteForm" class="mb-4 flex gap-2">
-      <input type="text" id="nomInput" class="border p-2 rounded w-full" placeholder="Écrire une note..." required>
-      <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded">Ajouter</button>
-    </form>
-
-    <!-- Champ de recherche -->
-    <input type="text" id="searchInput" class="border p-2 rounded w-full search-input" placeholder="Recherche instantanée...">
-
-    <!-- Liste des notes -->
-    <div class="list-notes" id="listePersonnes"></div>
-  </div>
-
-  <!-- Modal pour modifier/supprimer/copier -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal" id="modal">
-      <button class="btn-close" id="btnCloseModal">&times;</button>
-      <h3>Modifier / Supprimer / Copier</h3>
-      <input type="text" id="modalNomInput" placeholder="Modifier la note..." />
-      <div class="modal-buttons">
-        <button id="btnModifier" class="bg-green-500 hover:bg-green-600 text-white rounded">Modifier</button>
-        <button id="btnSupprimer" class="bg-red-500 hover:bg-red-600 text-white rounded">Supprimer</button>
-        <button id="btnCopier" class="bg-gray-500 hover:bg-gray-600 text-white rounded">Copier</button>
-      </div>
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="Ton message..." />
+      <button onclick="envoyerMessage()">✉️</button>
     </div>
   </div>
 
-  <!-- Firebase SDKs depuis le CDN -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
-    // Votre configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
       projectId: "blocnotepartage",
       storageBucket: "blocnotepartage.appspot.com",
       messagingSenderId: "635513565402",
-      appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
+      appId: "1:635513565402:web:85b3fca4428eabad3a75e3",
+      measurementId: "G-HHTMMHCZQP"
     };
 
-    // Initialisation Firebase
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Activer la persistance hors ligne
-    db.enablePersistence().catch(err => {
-      if (err.code === 'failed-precondition') {
-        console.warn("Persistence non disponible (plusieurs onglets ouverts)");
-      } else if (err.code === 'unimplemented') {
-        console.warn("Persistence non supportée par ce navigateur");
-      }
-    });
-
-    // Références DOM
-    const noteForm = document.getElementById("noteForm");
-    const nomInput = document.getElementById("nomInput");
-    const searchInput = document.getElementById("searchInput");
-    const listePersonnesDiv = document.getElementById("listePersonnes");
-    const status = document.getElementById("status");
-
-    const modalOverlay = document.getElementById("modalOverlay");
-    const modalNomInput = document.getElementById("modalNomInput");
-    const btnModifier = document.getElementById("btnModifier");
-    const btnSupprimer = document.getElementById("btnSupprimer");
-    const btnCopier = document.getElementById("btnCopier");
-    const btnCloseModal = document.getElementById("btnCloseModal");
-
-    let personnes = [];
-    let personneActive = null; // { id, nom }
-
-    // Gérer l'état de la connexion
-    window.addEventListener("online", () => updateStatus(true));
-    window.addEventListener("offline", () => updateStatus(false));
-
-    function updateStatus(isOnline) {
-      status.textContent = isOnline
-        ? "✅ Connecté à Internet (synchronisation active)"
-        : "⚠️ Mode hors ligne - les données seront synchronisées automatiquement";
-      status.className = isOnline ? "text-green-600 mb-2" : "text-orange-500 mb-2";
+    let username = localStorage.getItem("chatUsername");
+    if (!username) {
+      username = prompt("Entrez votre pseudo :");
+      localStorage.setItem("chatUsername", username);
     }
-    // Initialiser l’état
-    updateStatus(navigator.onLine);
+    document.getElementById("usernameDisplay").textContent = "Connecté en tant que : " + username;
 
-    // Authentification anonyme (pour Firestore)
-    auth.signInAnonymously().catch(err => {
-      console.error("Erreur d'authentification", err);
-    });
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const messagesSelectionnes = new Set();
 
-    // Écoute en temps réel de la collection "personnes" (notes)
-    db.collection("personnes").orderBy("dateAjout", "desc")
-      .onSnapshot(snapshot => {
-        personnes = [];
+    function envoyerMessage() {
+      const texte = messageInput.value.trim();
+      if (texte !== "") {
+        db.collection("messages").add({
+          texte,
+          date: firebase.firestore.Timestamp.now(),
+          auteur: username,
+          likes: []
+        });
+        messageInput.value = "";
+      }
+    }
+
+    function afficherMessages() {
+      db.collection("messages").orderBy("date").onSnapshot(snapshot => {
+        messagesDiv.innerHTML = "";
         snapshot.forEach(doc => {
-          personnes.push({ id: doc.id, ...doc.data() });
+          const data = doc.data();
+          const dateObj = data.date.toDate();
+          const heure = String(dateObj.getHours()).padStart(2, '0');
+          const minute = String(dateObj.getMinutes()).padStart(2, '0');
+          const heureFormatee = `${heure}:${minute}`;
+
+          const container = document.createElement("div");
+          container.className = "message-container";
+
+          const messageDiv = document.createElement("div");
+          const classe = (data.auteur === username) ? "me" : "other";
+          messageDiv.className = `message ${classe}`;
+          if (messagesSelectionnes.has(doc.id)) {
+            messageDiv.classList.add("selected");
+          }
+
+          messageDiv.innerHTML = `
+            <div><strong>${data.auteur}</strong><br>${data.texte}</div>
+            <div class="time">${heureFormatee}</div>
+          `;
+
+          // Like (cœur)
+          const reactionDiv = document.createElement("div");
+          reactionDiv.className = "reaction";
+          const likeCount = data.likes?.length || 0;
+          const likedByUser = data.likes?.includes(username);
+
+          const coeur = document.createElement("span");
+          coeur.textContent = "❤️";
+          coeur.style.opacity = likedByUser ? "1" : "0.5";
+          coeur.onclick = () => {
+            const newLikes = [...(data.likes || [])];
+            if (likedByUser) {
+              const index = newLikes.indexOf(username);
+              if (index !== -1) newLikes.splice(index, 1);
+            } else {
+              newLikes.push(username);
+            }
+            db.collection("messages").doc(doc.id).update({ likes: newLikes });
+          };
+          reactionDiv.appendChild(coeur);
+
+          if (likeCount > 0) {
+            const count = document.createElement("span");
+            count.textContent = likeCount;
+            reactionDiv.appendChild(count);
+          }
+
+          messageDiv.appendChild(reactionDiv);
+
+          if (data.auteur === username) {
+            messageDiv.onclick = () => {
+              if (messagesSelectionnes.has(doc.id)) {
+                messagesSelectionnes.delete(doc.id);
+              } else {
+                messagesSelectionnes.add(doc.id);
+              }
+              afficherMessages();
+            };
+          }
+
+          if (data.auteur !== username) {
+            const avatar = document.createElement("div");
+            avatar.className = "avatar-bubble";
+            avatar.textContent = data.auteur.charAt(0).toUpperCase();
+            container.appendChild(avatar);
+          }
+
+          container.appendChild(messageDiv);
+          messagesDiv.appendChild(container);
         });
-        afficherPersonnes();
+
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    }
+
+    function supprimerMessagesSelectionnes() {
+      if (messagesSelectionnes.size === 0) {
+        alert("Aucun message sélectionné.");
+        return;
+      }
+
+      let confirmation = "Voulez-vous supprimer les messages suivants ?\n\n";
+      let listeMessages = [];
+
+      const promesses = [];
+      messagesSelectionnes.forEach(id => {
+        const promesse = db.collection("messages").doc(id).get().then(doc => {
+          const data = doc.data();
+          if (data.auteur === username) {
+            listeMessages.push(`- ${data.texte}`);
+          }
+        });
+        promesses.push(promesse);
       });
 
-    // Soumission du formulaire d’ajout (nouvelle note)
-    noteForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const nom = nomInput.value.trim();
-      if (nom === "") {
-        alert("Écris une note valide.");
-        return;
-      }
-      try {
-        await db.collection("personnes").add({
-          nom,
-          dateAjout: firebase.firestore.Timestamp.now()
-        });
-        nomInput.value = "";
-      } catch (err) {
-        alert("Erreur ajout : " + err.message);
-      }
-    });
-
-    // Recherche instantanée
-    searchInput.addEventListener("input", afficherPersonnes);
-
-    // Afficher les notes sous forme de cards
-    function afficherPersonnes() {
-      const filtre = searchInput.value.toLowerCase();
-      const filtrées = personnes.filter(p =>
-        p.nom.toLowerCase().includes(filtre)
-      );
-      listePersonnesDiv.innerHTML = "";
-
-      if (filtrées.length === 0) {
-        listePersonnesDiv.innerHTML = "<i>Aucune note trouvée</i>";
-        return;
-      }
-
-      filtrées.forEach(p => {
-        const div = document.createElement("div");
-        div.className = "card";
-        const spanNom = document.createElement("span");
-        spanNom.textContent = p.nom;
-        div.appendChild(spanNom);
-
-        div.addEventListener("click", () => {
-          personneActive = p;
-          ouvrirModal(p);
-        });
-
-        listePersonnesDiv.appendChild(div);
-      });
-    }
-
-    // Ouvrir le modal pour modifier/supprimer/copier
-    function ouvrirModal(p) {
-      modalNomInput.value = p.nom;
-      modalOverlay.style.display = "flex";
-      modalNomInput.focus();
-    }
-
-    function fermerModal() {
-      modalOverlay.style.display = "none";
-      personneActive = null;
-    }
-
-    btnModifier.addEventListener("click", async () => {
-      const nouveauNom = modalNomInput.value.trim();
-      if (nouveauNom === "") {
-        alert("Écris une note valide.");
-        return;
-      }
-      try {
-        await db.collection("personnes").doc(personneActive.id).update({
-          nom: nouveauNom
-        });
-        fermerModal();
-      } catch (err) {
-        alert("Erreur modification : " + err.message);
-      }
-    });
-
-    btnSupprimer.addEventListener("click", async () => {
-      if (confirm("Supprimer cette note ?")) {
-        try {
-          await db.collection("personnes").doc(personneActive.id).delete();
-          fermerModal();
-        } catch (err) {
-          alert("Erreur suppression : " + err.message);
+      Promise.all(promesses).then(() => {
+        confirmation += listeMessages.join("\n");
+        if (confirm(confirmation)) {
+          messagesSelectionnes.forEach(id => {
+            db.collection("messages").doc(id).delete();
+          });
+          messagesSelectionnes.clear();
         }
-      }
-    });
-
-    btnCopier.addEventListener("click", () => {
-      const texteACopier = modalNomInput.value.trim();
-      if (texteACopier === "") return;
-      navigator.clipboard.writeText(texteACopier)
-        .then(() => alert(`"${texteACopier}" copié dans le presse-papiers.`))
-        .catch(err => console.error("Erreur copie :", err));
-    });
-
-    btnCloseModal.addEventListener("click", fermerModal);
-    modalOverlay.addEventListener("click", (e) => {
-      if (e.target === modalOverlay) fermerModal();
-    });
-  </script>
-
-  <!-- Enregistrement du Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-          .then(reg => console.log('Service Worker enregistré :', reg.scope))
-          .catch(err => console.warn('Échec enregistrement Service Worker :', err));
       });
     }
-  </script>
 
+    afficherMessages();
+  </script>
 </body>
 </html>
