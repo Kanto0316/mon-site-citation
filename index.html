@@ -7,7 +7,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: 'Inter', sans-serif;
       background: #f4f6f8;
@@ -16,18 +15,8 @@
       align-items: flex-start;
       min-height: 100vh;
       padding-bottom: 40px;
-      overflow: hidden; /* Empêche la barre de défilement globale */
     }
-
-    /* Masquer la barre de défilement pour .list-notes */
-    .list-notes {
-      scrollbar-width: none; /* Firefox */
-    }
-    .list-notes::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, Opera */
-    }
-
-    .container, #detailView {
+    .container {
       max-width: 600px;
       width: 100%;
       background: #fff;
@@ -37,23 +26,16 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 25px;
     }
-
-    h2, h3 {
+    h2 {
       text-align: center;
       color: #333;
       font-size: 1.8rem;
       font-weight: 600;
     }
-
-    form#noteForm {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    form#noteForm input[type="text"] {
+    input[type="text"] {
+      width: 100%;
       padding: 14px 18px;
       border: 1.5px solid #d1d5db;
       border-radius: 12px;
@@ -62,39 +44,26 @@
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
       outline-offset: 2px;
     }
-
-    form#noteForm input[type="text"]:focus {
+    input[type="text"]:focus {
       border-color: #4f46e5;
       box-shadow: 0 0 8px rgba(79,70,229,0.4);
       outline: none;
     }
-
-    form#noteForm .input-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    form#noteForm .input-row input {
-      flex: 1;
-    }
-
-    form#noteForm button {
-      align-self: flex-end;
+    button {
       background: #4f46e5;
       color: #fff;
       border: none;
-      padding: 14px 24px;
-      border-radius: 12px;
+      padding: 12px 20px;
+      border-radius: 10px;
       font-size: 1rem;
       cursor: pointer;
       transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      align-self: flex-start;
     }
-
-    form#noteForm button:hover {
+    button:hover {
       background: #4338ca;
       box-shadow: 0 6px 15px rgba(67,56,202,0.4);
     }
-
     .search-input {
       margin-top: 10px;
       margin-bottom: 5px;
@@ -104,7 +73,6 @@
       font-size: 1rem;
       outline-offset: 2px;
     }
-
     .list-notes {
       display: grid;
       grid-template-columns: 1fr;
@@ -113,98 +81,105 @@
       overflow-y: auto;
       padding-right: 5px;
     }
-
     .card {
-      background: #fffbfb; /* Couleur pastel douce */
+      background: #fff;
       padding: 15px 20px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
     }
-
     .card:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
-
-    .card-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: #2c3e50;
-    }
-
-    .card-content {
-      font-size: 1rem;
+    .card span {
+      font-size: 1.1rem;
       color: #33475b;
-      word-break: break-word;
+      font-weight: 500;
     }
-
-    #detailView {
+    .modal-overlay {
       display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      width: 90%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
       gap: 15px;
       position: relative;
     }
-
-    #detailView .back-button {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      background: transparent;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #4f46e5;
-      transition: color 0.2s ease;
-    }
-
-    #detailView .back-button:hover {
-      color: #4338ca;
-    }
-
-    #detailTitle {
-      margin-top: 40px;
-      font-size: 1.6rem;
-      color: #2c3e50;
-      text-align: center;
-    }
-
-    #detailContent {
+    .modal input[type="text"] {
       font-size: 1rem;
-      color: #33475b;
-      white-space: pre-wrap;
+      padding: 12px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .modal input[type="text"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 8px rgba(79,70,229,0.4);
+      outline: none;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
       margin-top: 10px;
     }
-
+    .modal button {
+      padding: 10px 18px;
+      font-size: 0.95rem;
+    }
+    .modal .btn-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: transparent;
+      color: #999;
+      font-size: 1.2rem;
+      border: none;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    .modal .btn-close:hover {
+      color: #333;
+    }
     #status {
       text-align: center;
       font-size: 0.95rem;
       font-weight: 500;
     }
-
     @media (max-width: 480px) {
-      .container, #detailView {
+      .container {
         padding: 15px 20px;
         margin: 20px 10px;
       }
-      h2, h3 {
+      h2 {
         font-size: 1.5rem;
       }
-      form#noteForm button {
+      button {
         padding: 10px 16px;
         font-size: 0.95rem;
       }
-      .card-title {
+      .card span {
         font-size: 1rem;
       }
-      .card-content {
-        font-size: 0.9rem;
-      }
-      #detailTitle {
-        font-size: 1.4rem;
+      .modal {
+        padding: 20px;
       }
       #status {
         font-size: 0.9rem;
@@ -214,34 +189,37 @@
 </head>
 <body>
 
-  <!-- Vue principale -->
-  <div class="container" id="mainView">
+  <div class="container">
     <h2>Bloc Note</h2>
 
     <!-- Indicateur de connexion -->
     <div id="status" class="mb-2"></div>
 
     <!-- Formulaire d’ajout -->
-    <form id="noteForm" class="mb-4">
-      <input type="text" id="titreInput" placeholder="Titre de la note..." required>
-      <div class="input-row">
-        <input type="text" id="contenuInput" placeholder="Écrire une note..." required>
-        <button type="submit">Ajouter</button>
-      </div>
+    <form id="noteForm" class="mb-4 flex gap-2">
+      <input type="text" id="nomInput" class="border p-2 rounded w-full" placeholder="Écrire une note..." required>
+      <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded">Ajouter</button>
     </form>
 
     <!-- Champ de recherche -->
-    <input type="text" id="searchInput" class="search-input" placeholder="Recherche instantanée...">
+    <input type="text" id="searchInput" class="border p-2 rounded w-full search-input" placeholder="Recherche instantanée...">
 
     <!-- Liste des notes -->
     <div class="list-notes" id="listePersonnes"></div>
   </div>
 
-  <!-- Vue détail (affichée au clic sur une note) -->
-  <div class="container" id="detailView">
-    <button class="back-button" id="btnBack">&#8592;</button>
-    <h3 id="detailTitle"></h3>
-    <div id="detailContent"></div>
+  <!-- Modal pour modifier/supprimer/copier -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="btn-close" id="btnCloseModal">&times;</button>
+      <h3>Modifier / Supprimer / Copier</h3>
+      <input type="text" id="modalNomInput" placeholder="Modifier la note..." />
+      <div class="modal-buttons">
+        <button id="btnModifier" class="bg-green-500 hover:bg-green-600 text-white rounded">Modifier</button>
+        <button id="btnSupprimer" class="bg-red-500 hover:bg-red-600 text-white rounded">Supprimer</button>
+        <button id="btnCopier" class="bg-gray-500 hover:bg-gray-600 text-white rounded">Copier</button>
+      </div>
+    </div>
   </div>
 
   <!-- Firebase SDKs depuis le CDN -->
@@ -275,20 +253,21 @@
     });
 
     // Références DOM
-    const mainView = document.getElementById("mainView");
-    const detailView = document.getElementById("detailView");
     const noteForm = document.getElementById("noteForm");
-    const titreInput = document.getElementById("titreInput");
-    const contenuInput = document.getElementById("contenuInput");
+    const nomInput = document.getElementById("nomInput");
     const searchInput = document.getElementById("searchInput");
     const listePersonnesDiv = document.getElementById("listePersonnes");
     const status = document.getElementById("status");
-    const detailTitle = document.getElementById("detailTitle");
-    const detailContent = document.getElementById("detailContent");
-    const btnBack = document.getElementById("btnBack");
+
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalNomInput = document.getElementById("modalNomInput");
+    const btnModifier = document.getElementById("btnModifier");
+    const btnSupprimer = document.getElementById("btnSupprimer");
+    const btnCopier = document.getElementById("btnCopier");
+    const btnCloseModal = document.getElementById("btnCloseModal");
 
     let personnes = [];
-    let personneActive = null; // { id, titre, contenu }
+    let personneActive = null; // { id, nom }
 
     // Gérer l'état de la connexion
     window.addEventListener("online", () => updateStatus(true));
@@ -300,6 +279,7 @@
         : "⚠️ Mode hors ligne - les données seront synchronisées automatiquement";
       status.className = isOnline ? "text-green-600 mb-2" : "text-orange-500 mb-2";
     }
+    // Initialiser l’état
     updateStatus(navigator.onLine);
 
     // Authentification anonyme (pour Firestore)
@@ -320,34 +300,30 @@
     // Soumission du formulaire d’ajout (nouvelle note)
     noteForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const titre = titreInput.value.trim();
-      const contenu = contenuInput.value.trim();
-      if (titre === "" || contenu === "") {
-        alert("Titre et contenu sont requis.");
+      const nom = nomInput.value.trim();
+      if (nom === "") {
+        alert("Écris une note valide.");
         return;
       }
       try {
         await db.collection("personnes").add({
-          titre,
-          contenu,
+          nom,
           dateAjout: firebase.firestore.Timestamp.now()
         });
-        titreInput.value = "";
-        contenuInput.value = "";
+        nomInput.value = "";
       } catch (err) {
         alert("Erreur ajout : " + err.message);
       }
     });
 
-    // Recherche instantanée (sur titre et contenu)
+    // Recherche instantanée
     searchInput.addEventListener("input", afficherPersonnes);
 
     // Afficher les notes sous forme de cards
     function afficherPersonnes() {
       const filtre = searchInput.value.toLowerCase();
       const filtrées = personnes.filter(p =>
-        p.titre.toLowerCase().includes(filtre) ||
-        p.contenu.toLowerCase().includes(filtre)
+        p.nom.toLowerCase().includes(filtre)
       );
       listePersonnesDiv.innerHTML = "";
 
@@ -359,42 +335,69 @@
       filtrées.forEach(p => {
         const div = document.createElement("div");
         div.className = "card";
-
-        const spanTitre = document.createElement("div");
-        spanTitre.className = "card-title";
-        spanTitre.textContent = p.titre;
-        div.appendChild(spanTitre);
-
-        const spanContenu = document.createElement("div");
-        spanContenu.className = "card-content";
-        // Afficher un extrait si trop long
-        spanContenu.textContent = p.contenu.length > 100
-          ? p.contenu.substring(0, 100) + "…"
-          : p.contenu;
-        div.appendChild(spanContenu);
+        const spanNom = document.createElement("span");
+        spanNom.textContent = p.nom;
+        div.appendChild(spanNom);
 
         div.addEventListener("click", () => {
           personneActive = p;
-          afficherDetail(p);
+          ouvrirModal(p);
         });
 
         listePersonnesDiv.appendChild(div);
       });
     }
 
-    // Afficher le détail d'une note dans une vue séparée
-    function afficherDetail(p) {
-      detailTitle.textContent = p.titre;
-      detailContent.textContent = p.contenu;
-      mainView.style.display = "none";
-      detailView.style.display = "flex";
+    // Ouvrir le modal pour modifier/supprimer/copier
+    function ouvrirModal(p) {
+      modalNomInput.value = p.nom;
+      modalOverlay.style.display = "flex";
+      modalNomInput.focus();
     }
 
-    // Bouton retour à l'accueil
-    btnBack.addEventListener("click", () => {
-      detailView.style.display = "none";
-      mainView.style.display = "flex";
+    function fermerModal() {
+      modalOverlay.style.display = "none";
       personneActive = null;
+    }
+
+    btnModifier.addEventListener("click", async () => {
+      const nouveauNom = modalNomInput.value.trim();
+      if (nouveauNom === "") {
+        alert("Écris une note valide.");
+        return;
+      }
+      try {
+        await db.collection("personnes").doc(personneActive.id).update({
+          nom: nouveauNom
+        });
+        fermerModal();
+      } catch (err) {
+        alert("Erreur modification : " + err.message);
+      }
+    });
+
+    btnSupprimer.addEventListener("click", async () => {
+      if (confirm("Supprimer cette note ?")) {
+        try {
+          await db.collection("personnes").doc(personneActive.id).delete();
+          fermerModal();
+        } catch (err) {
+          alert("Erreur suppression : " + err.message);
+        }
+      }
+    });
+
+    btnCopier.addEventListener("click", () => {
+      const texteACopier = modalNomInput.value.trim();
+      if (texteACopier === "") return;
+      navigator.clipboard.writeText(texteACopier)
+        .then(() => alert(`"${texteACopier}" copié dans le presse-papiers.`))
+        .catch(err => console.error("Erreur copie :", err));
+    });
+
+    btnCloseModal.addEventListener("click", fermerModal);
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) fermerModal();
     });
   </script>
 
@@ -408,5 +411,6 @@
       });
     }
   </script>
+
 </body>
 </html>
