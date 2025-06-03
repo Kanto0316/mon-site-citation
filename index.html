@@ -208,7 +208,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
-    // Configuration Firebase (inchangée)
+    // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA_uRgm176DBMs-qs0_fFkG5buKdzyXIvQ",
       authDomain: "blocnotepartage.firebaseapp.com",
@@ -218,7 +218,7 @@
       appId: "1:635513565402:web:85b3fca4428eabad3a75e3"
     };
 
-    // Initialisation de Firebase
+    // Initialisation Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -237,7 +237,7 @@
     let personnes = [];
     let personneActive = null; // contiendra { id, nom }
 
-    // **Écoute en temps réel de la collection "personnes"**
+    // Écoute en temps réel de la collection "personnes"
     db.collection("personnes")
       .orderBy("dateAjout", "desc")
       .onSnapshot(snapshot => {
