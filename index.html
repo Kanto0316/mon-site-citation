@@ -3,18 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PDF Extractor</title>
+  <title>PDF to Word Converter</title>
   <style>
     :root {
-      --bg: #f3f6fb;
-      --card: #ffffff;
-      --text: #1f2937;
+      --bg: #eef3ff;
+      --card-bg: #ffffff;
+      --text: #1f2a44;
       --muted: #6b7280;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --border: #dbe3ee;
+      --border: #dbe4ff;
+      --success-bg: #e8f7ed;
+      --success-text: #166534;
       --error-bg: #fee2e2;
-      --error-text: #991b1b;
+      --error-text: #b91c1c;
+      --gradient-start: #3b82f6;
+      --gradient-end: #1d4ed8;
+      --shadow: 0 18px 45px rgba(29, 78, 216, 0.14);
     }
 
     * {
@@ -24,170 +27,196 @@
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: radial-gradient(circle at top left, #e8efff, var(--bg) 45%);
-      color: var(--text);
       display: grid;
       place-items: center;
-      padding: 20px;
+      padding: 24px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top left, #dbe9ff 0%, var(--bg) 40%, #f8faff 100%);
     }
 
     .card {
-      width: min(100%, 680px);
-      background: var(--card);
+      width: min(100%, 480px);
+      background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: 0 12px 30px rgba(31, 41, 55, 0.08);
-      padding: 24px;
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 28px;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: clamp(1.5rem, 2.4vw, 2rem);
-      letter-spacing: 0.2px;
+      margin: 0 0 6px;
+      font-size: clamp(1.4rem, 2.7vw, 2rem);
       text-align: center;
+      letter-spacing: 0.2px;
     }
 
     .subtitle {
-      margin: 0 0 20px;
+      margin: 0 0 22px;
       color: var(--muted);
       text-align: center;
       font-size: 0.95rem;
     }
 
-    .controls {
+    .form-group {
       display: grid;
-      gap: 12px;
+      gap: 14px;
     }
 
-    input[type="file"] {
+    .file-input {
       width: 100%;
-      padding: 12px;
       border: 1px solid var(--border);
       border-radius: 12px;
-      background: #f8fafc;
+      padding: 12px;
       font-size: 0.95rem;
       color: var(--text);
+      background: #f8faff;
     }
 
-    button {
+    .convert-btn {
       border: none;
       border-radius: 12px;
-      background: var(--primary);
-      color: white;
-      padding: 12px 16px;
+      padding: 12px 18px;
+      color: #fff;
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.2s ease, transform 0.1s ease;
+      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.26);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
-    button:hover:not(:disabled) {
-      background: var(--primary-hover);
+    .convert-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 24px rgba(59, 130, 246, 0.32);
+      filter: brightness(1.04);
     }
 
-    button:active:not(:disabled) {
-      transform: translateY(1px);
+    .convert-btn:active:not(:disabled) {
+      transform: translateY(0);
     }
 
-    button:disabled {
-      opacity: 0.7;
+    .convert-btn:disabled {
+      opacity: 0.75;
       cursor: not-allowed;
     }
 
-    .status {
-      min-height: 24px;
-      margin-top: 8px;
-      font-size: 0.92rem;
-      color: var(--muted);
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2.5px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
     }
 
-    .status.error {
-      color: var(--error-text);
-      background: var(--error-bg);
+    .convert-btn.loading .spinner {
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .message {
+      margin-top: 16px;
+      min-height: 42px;
       border-radius: 10px;
-      padding: 8px 10px;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+      display: none;
+      line-height: 1.4;
     }
 
-    .result-label {
-      margin: 18px 0 8px;
-      font-weight: 600;
-      font-size: 0.95rem;
+    .message.success {
+      display: block;
+      background: var(--success-bg);
+      color: var(--success-text);
     }
 
-    .result-box {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: #fbfdff;
-      padding: 12px;
-      height: 260px;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      line-height: 1.45;
-      font-size: 0.93rem;
+    .message.error {
+      display: block;
+      background: var(--error-bg);
+      color: var(--error-text);
     }
 
-    @media (max-width: 480px) {
-      .card {
-        padding: 18px;
-        border-radius: 14px;
+    @media (max-width: 520px) {
+      body {
+        padding: 14px;
       }
 
-      .result-box {
-        height: 220px;
+      .card {
+        padding: 20px;
+        border-radius: 16px;
+      }
+
+      .convert-btn {
+        width: 100%;
       }
     }
   </style>
 </head>
 <body>
   <main class="card">
-    <h1>PDF Extractor</h1>
-    <p class="subtitle">Upload a PDF and extract text from the backend API.</p>
+    <h1>PDF to Word Converter</h1>
+    <p class="subtitle">Upload your PDF and get a Word (.docx) file in seconds.</p>
 
-    <section class="controls">
-      <input id="pdfFile" type="file" accept="application/pdf" />
-      <button id="uploadBtn" type="button">Upload PDF</button>
-    </section>
+    <div class="form-group">
+      <input id="pdfInput" class="file-input" type="file" accept="application/pdf,.pdf" />
 
-    <p id="status" class="status"></p>
+      <button id="convertBtn" class="convert-btn" type="button">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="buttonLabel">Convert</span>
+      </button>
+    </div>
 
-    <p class="result-label">Extracted Text</p>
-    <div id="result" class="result-box">No result yet.</div>
+    <p id="message" class="message" role="status" aria-live="polite"></p>
   </main>
 
   <script>
-    const endpoint = "https://back-end-serveur-1.onrender.com/upload";
+    const API_ENDPOINT = "https://back-end-serveur-1.onrender.com/convert";
 
-    const fileInput = document.getElementById("pdfFile");
-    const uploadBtn = document.getElementById("uploadBtn");
-    const statusText = document.getElementById("status");
-    const resultBox = document.getElementById("result");
+    const pdfInput = document.getElementById("pdfInput");
+    const convertBtn = document.getElementById("convertBtn");
+    const buttonLabel = document.getElementById("buttonLabel");
+    const message = document.getElementById("message");
 
     function setLoading(isLoading) {
-      uploadBtn.disabled = isLoading;
-      uploadBtn.textContent = isLoading ? "Uploading..." : "Upload PDF";
-      if (isLoading) {
-        statusText.classList.remove("error");
-        statusText.textContent = "Uploading and extracting text, please wait...";
+      convertBtn.disabled = isLoading;
+      convertBtn.classList.toggle("loading", isLoading);
+      buttonLabel.textContent = isLoading ? "Converting..." : "Convert";
+    }
+
+    function showMessage(type, text) {
+      message.className = "message";
+      if (type) {
+        message.classList.add(type);
       }
+      message.textContent = text || "";
     }
 
-    function showError(message) {
-      statusText.classList.add("error");
-      statusText.textContent = message;
+    function buildOutputName(filename) {
+      const baseName = filename.replace(/\.pdf$/i, "") || "converted-file";
+      return `${baseName}.docx`;
     }
 
-    uploadBtn.addEventListener("click", async () => {
-      const file = fileInput.files[0];
+    async function convertPdf() {
+      const file = pdfInput.files[0];
 
       if (!file) {
-        showError("Please select a PDF file before uploading.");
+        showMessage("error", "Please select a PDF file first.");
         return;
       }
 
-      if (file.type !== "application/pdf") {
-        showError("Only PDF files are supported.");
+      if (file.type && file.type !== "application/pdf") {
+        showMessage("error", "Invalid file type. Please upload a PDF.");
         return;
       }
 
@@ -196,38 +225,45 @@
 
       try {
         setLoading(true);
-        resultBox.textContent = "Waiting for extracted text...";
+        showMessage(null, "");
 
-        const response = await fetch(endpoint, {
+        const response = await fetch(API_ENDPOINT, {
           method: "POST",
           body: formData,
         });
 
-        let data;
-        try {
-          data = await response.json();
-        } catch {
-          throw new Error("Invalid JSON response from server.");
-        }
-
         if (!response.ok) {
-          throw new Error(data?.message || `API error (${response.status}).`);
+          let errorText = `Conversion failed (HTTP ${response.status}).`;
+          try {
+            const maybeJson = await response.json();
+            if (maybeJson?.message) {
+              errorText = maybeJson.message;
+            }
+          } catch {
+            // Keep default error text if response isn't JSON.
+          }
+          throw new Error(errorText);
         }
 
-        if (data.status !== "ok" || typeof data.content !== "string") {
-          throw new Error("Unexpected API response format.");
-        }
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = buildOutputName(file.name);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(downloadUrl);
 
-        statusText.classList.remove("error");
-        statusText.textContent = "Extraction completed successfully.";
-        resultBox.textContent = data.content || "No text content returned by API.";
+        showMessage("success", "Conversion successful! Your .docx file has been downloaded.");
       } catch (error) {
-        resultBox.textContent = "No result yet.";
-        showError(error.message || "Network error. Please try again.");
+        showMessage("error", error.message || "An unexpected error occurred. Please try again.");
       } finally {
         setLoading(false);
       }
-    });
+    }
+
+    convertBtn.addEventListener("click", convertPdf);
   </script>
 </body>
 </html>
