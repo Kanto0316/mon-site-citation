@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Téléchargement du fichier</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="card" aria-labelledby="download-title">
+        <h1 id="download-title">Téléchargement du fichier</h1>
+        <p class="subtitle">Récupérez votre fichier en un clic.</p>
+
+        <div id="downloadStatus" class="status" role="status" aria-live="polite"></div>
+
+        <section id="downloadInfo" class="result hidden">
+          <p><strong>Nom du fichier :</strong> <span id="fileName">-</span></p>
+          <a id="downloadBtn" class="btn btn-primary" href="#" download>Télécharger</a>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,346 +1,44 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Import PDF - Tableau articles</title>
-  <style>
-    :root {
-      --bg: #f3f6ff;
-      --card-bg: #ffffff;
-      --text: #172033;
-      --muted: #667085;
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --border: #dbe4ff;
-      --row-hover: #f8faff;
-      --success-bg: #ecfdf3;
-      --success-text: #166534;
-      --error-bg: #fef2f2;
-      --error-text: #b91c1c;
-      --shadow: 0 18px 40px rgba(37, 99, 235, 0.12);
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transfert de fichiers</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="card" aria-labelledby="main-title">
+        <h1 id="main-title">Transfert de fichiers</h1>
+        <p class="subtitle">Glissez-déposez un fichier ou sélectionnez-le depuis votre appareil.</p>
 
-    * {
-      box-sizing: border-box;
-    }
+        <form id="uploadForm" class="upload-form" novalidate>
+          <label id="dropZone" class="drop-zone" for="fileInput">
+            <input id="fileInput" name="file" type="file" />
+            <span class="drop-zone__title">Déposer un fichier ici</span>
+            <span class="drop-zone__hint">ou cliquer pour choisir un fichier</span>
+            <span id="selectedFile" class="selected-file" aria-live="polite">Aucun fichier sélectionné</span>
+          </label>
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      padding: 24px;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      color: var(--text);
-      background: radial-gradient(circle at top left, #dce9ff 0%, var(--bg) 45%, #fbfcff 100%);
-    }
+          <button id="uploadBtn" class="btn btn-primary" type="submit">Envoyer</button>
+        </form>
 
-    .container {
-      width: min(100%, 980px);
-      margin: 0 auto;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      padding: 20px;
-    }
+        <div id="statusMessage" class="status" role="status" aria-live="polite"></div>
 
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
+        <div id="progressWrap" class="progress-wrap" aria-hidden="true">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
 
-    .toolbar h1 {
-      margin: 0;
-      font-size: clamp(1.15rem, 2.5vw, 1.6rem);
-    }
+        <section id="result" class="result hidden" aria-live="polite">
+          <p class="success">Fichier envoyé avec succès</p>
+          <div class="link-row">
+            <a id="downloadLink" href="#" target="_blank" rel="noopener noreferrer"></a>
+            <button id="copyBtn" class="btn btn-secondary" type="button">Copier le lien</button>
+          </div>
+        </section>
+      </section>
+    </main>
 
-    .toolbar p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .import-btn {
-      border: none;
-      border-radius: 999px;
-      padding: 10px 18px;
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color: #fff;
-      font-weight: 600;
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.26);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .import-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      filter: brightness(1.03);
-      box-shadow: 0 14px 24px rgba(37, 99, 235, 0.32);
-    }
-
-    .import-btn:disabled {
-      opacity: 0.75;
-      cursor: not-allowed;
-    }
-
-    .spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(255, 255, 255, 0.35);
-      border-top-color: #fff;
-      border-radius: 50%;
-      display: none;
-      animation: spin 0.8s linear infinite;
-    }
-
-    .import-btn.loading .spinner {
-      display: inline-block;
-    }
-
-    .table-wrapper {
-      width: 100%;
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: #fff;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 640px;
-    }
-
-    thead th {
-      text-align: left;
-      font-size: 0.88rem;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--muted);
-      background: #f8faff;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th,
-    td {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    tbody tr:hover {
-      background: var(--row-hover);
-    }
-
-    tbody tr:last-child td {
-      border-bottom: none;
-    }
-
-    .empty-row td {
-      color: var(--muted);
-      text-align: center;
-      font-style: italic;
-      padding: 20px;
-    }
-
-    .message {
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      font-size: 0.92rem;
-      display: none;
-    }
-
-    .message.success {
-      display: block;
-      background: var(--success-bg);
-      color: var(--success-text);
-    }
-
-    .message.error {
-      display: block;
-      background: var(--error-bg);
-      color: var(--error-text);
-    }
-
-    .message.info {
-      display: block;
-      background: #eff6ff;
-      color: #1e3a8a;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    @media (max-width: 640px) {
-      body {
-        padding: 14px;
-      }
-
-      .container {
-        padding: 14px;
-        border-radius: 14px;
-      }
-
-      .toolbar {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-    }
-  </style>
-</head>
-<body>
-  <main class="container">
-    <div class="toolbar">
-      <div>
-        <h1>Import de données depuis PDF</h1>
-        <p>Sélectionnez un fichier PDF pour remplir automatiquement le tableau.</p>
-      </div>
-
-      <button id="importBtn" class="import-btn" type="button">
-        <span class="spinner" aria-hidden="true"></span>
-        <span id="buttonLabel">Importer PDF</span>
-      </button>
-      <input id="pdfInput" type="file" accept="application/pdf,.pdf" hidden />
-    </div>
-
-    <div class="table-wrapper">
-      <table aria-label="Tableau des articles importés">
-        <thead>
-          <tr>
-            <th>Réf</th>
-            <th>Désignation</th>
-            <th>Quantité</th>
-            <th>Unité</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr class="empty-row">
-            <td colspan="4">Aucune donnée importée.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p id="message" class="message" role="status" aria-live="polite"></p>
-  </main>
-
-  <script>
-    const API_ENDPOINT = "https://back-end-serveur-1.onrender.com";
-
-    const importBtn = document.getElementById("importBtn");
-    const pdfInput = document.getElementById("pdfInput");
-    const buttonLabel = document.getElementById("buttonLabel");
-    const tableBody = document.getElementById("tableBody");
-    const message = document.getElementById("message");
-
-    function setLoading(isLoading) {
-      importBtn.disabled = isLoading;
-      importBtn.classList.toggle("loading", isLoading);
-      buttonLabel.textContent = isLoading ? "Chargement..." : "Importer PDF";
-    }
-
-    function showMessage(type, text) {
-      message.className = "message";
-      if (type) {
-        message.classList.add(type);
-      }
-      message.textContent = text || "";
-    }
-
-    function renderRows(rows) {
-      tableBody.innerHTML = "";
-
-      if (!Array.isArray(rows) || rows.length === 0) {
-        tableBody.innerHTML = '<tr class="empty-row"><td colspan="4">Aucune donnée trouvée dans ce PDF.</td></tr>';
-        return;
-      }
-
-      for (const item of rows) {
-        const tr = document.createElement("tr");
-
-        const ref = item?.Ref ?? "";
-        const designation = item?.Designation ?? "";
-        const quantite = item?.Quantite ?? "";
-        const unite = item?.Unite ?? "";
-
-        tr.innerHTML = `
-          <td>${escapeHtml(String(ref))}</td>
-          <td>${escapeHtml(String(designation))}</td>
-          <td>${escapeHtml(String(quantite))}</td>
-          <td>${escapeHtml(String(unite))}</td>
-        `;
-
-        tableBody.appendChild(tr);
-      }
-    }
-
-    function escapeHtml(value) {
-      return value
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-    }
-
-    async function uploadPdf(file) {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      setLoading(true);
-      showMessage("info", "Chargement...");
-
-      try {
-        const response = await fetch(API_ENDPOINT, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Échec de l'import (HTTP ${response.status}).`);
-        }
-
-        const data = await response.json();
-        renderRows(data);
-        showMessage("success", "Import terminé avec succès.");
-      } catch (error) {
-        renderRows([]);
-        showMessage("error", error.message || "Une erreur est survenue lors de l'import.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    importBtn.addEventListener("click", () => {
-      pdfInput.click();
-    });
-
-    pdfInput.addEventListener("change", () => {
-      const file = pdfInput.files?.[0];
-
-      if (!file) {
-        return;
-      }
-
-      const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-      if (!isPdf) {
-        showMessage("error", "Veuillez sélectionner un fichier PDF (.pdf). ");
-        return;
-      }
-
-      uploadPdf(file);
-    });
-  </script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>
