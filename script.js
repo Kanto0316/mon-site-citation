@@ -1,3 +1,4 @@
+const UPLOAD_ENDPOINT = "https://back-end-serveur-1.onrender.com/upload";
 const API_BASE = "https://back-end-serveur-1.onrender.com";
 
 const isIndexPage = Boolean(document.getElementById("uploadForm"));
@@ -73,25 +74,27 @@ function setupUploadPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch(`${API_BASE}/upload`, {
+      const response = await fetch(UPLOAD_ENDPOINT, {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Le serveur a retourné une erreur.");
+        throw new Error("Erreur serveur");
       }
 
-      const data = await response.json();
-      const urlFromApi = data.url || data.downloadUrl || data.link;
-      const idFromApi = data.id;
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Erreur de format");
+      }
 
-      const finalLink =
-        urlFromApi ||
-        (idFromApi ? `${window.location.origin}/download.html?id=${encodeURIComponent(idFromApi)}` : "");
+      console.debug("Réponse brute du serveur:", data);
 
+      const finalLink = data?.download_url;
       if (!finalLink) {
-        throw new Error("Réponse inattendue du backend: lien introuvable.");
+        throw new Error("Réponse inattendue du serveur");
       }
 
       showStatus(statusMessage, "success", "Upload terminé.");
@@ -100,7 +103,10 @@ function setupUploadPage() {
       downloadLink.textContent = finalLink;
       result.classList.remove("hidden");
     } catch (error) {
-      showStatus(statusMessage, "error", error.message || "Échec de l'envoi du fichier.");
+      const knownMessages = new Set(["Erreur serveur", "Erreur de format", "Réponse inattendue du serveur"]);
+      const rawMessage = error instanceof Error ? error.message : "";
+      const errorMessage = knownMessages.has(rawMessage) ? rawMessage : "Erreur serveur";
+      showStatus(statusMessage, "error", errorMessage);
     } finally {
       uploadBtn.disabled = false;
       stopFakeProgress(progressWrap, progressBar, progressTimer);
