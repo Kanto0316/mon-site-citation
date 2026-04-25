@@ -26,7 +26,7 @@ function setupUploadPage() {
   const progressWrap = document.getElementById("progressWrap");
   const progressBar = document.getElementById("progressBar");
   const excelForm = document.getElementById("excelForm");
-  const excelInput = document.getElementById("excelInput");
+  const excelInput = document.getElementById("excelFile");
   const excelSelectedFile = document.getElementById("excelSelectedFile");
   const excelBtn = document.getElementById("excelBtn");
   const excelStatus = document.getElementById("excelStatus");
@@ -138,50 +138,9 @@ function setupUploadPage() {
       excelSelectedFile.textContent = file ? `Fichier sélectionné : ${file.name}` : "Aucun fichier sélectionné";
     });
 
-    excelForm.addEventListener("submit", async (event) => {
+    excelForm.addEventListener("submit", (event) => {
       event.preventDefault();
-
-      const file = excelInput.files?.[0];
-      if (!file) {
-        showStatus(excelStatus, "error", "Veuillez sélectionner un fichier Excel avant la transformation.");
-        return;
-      }
-
-      const initialButtonText = "Transformer en JSON";
-      excelBtn.disabled = true;
-      excelBtn.textContent = "Traitement en cours...";
-      showStatus(excelStatus, "info", "Traitement en cours...");
-
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const response = await fetch(EXCEL_TO_JSON_ENDPOINT, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Le serveur a retourné une erreur pendant la transformation.");
-        }
-
-        const jsonBlob = await response.blob();
-        const downloadUrl = URL.createObjectURL(jsonBlob);
-        const anchor = document.createElement("a");
-        anchor.href = downloadUrl;
-        anchor.download = "suggestions.json";
-        document.body.append(anchor);
-        anchor.click();
-        anchor.remove();
-        URL.revokeObjectURL(downloadUrl);
-
-        showStatus(excelStatus, "success", "Transformation terminée. Le téléchargement de suggestions.json a démarré.");
-      } catch {
-        showStatus(excelStatus, "error", "Impossible de transformer le fichier. Vérifiez le format Excel puis réessayez.");
-      } finally {
-        excelBtn.disabled = false;
-        excelBtn.textContent = initialButtonText;
-      }
+      convertExcel();
     });
   }
 
@@ -195,6 +154,69 @@ function setupUploadPage() {
       value += Math.random() * 12;
       bar.style.width = `${Math.min(value, 90)}%`;
     }, 300);
+  }
+}
+
+async function convertExcel() {
+  console.log("Bouton cliqué");
+
+  const fileInput = document.getElementById("excelFile");
+  const excelBtn = document.getElementById("excelBtn");
+  const excelStatus = document.getElementById("excelStatus");
+
+  if (!fileInput || !excelBtn || !excelStatus) {
+    return;
+  }
+
+  const file = fileInput.files?.[0];
+  console.log(file);
+
+  if (!file) {
+    alert("Veuillez sélectionner un fichier Excel");
+    showStatus(excelStatus, "error", "Veuillez sélectionner un fichier Excel");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const initialButtonText = "Transformer en JSON";
+  excelBtn.disabled = true;
+  excelBtn.textContent = "Traitement en cours...";
+  showStatus(excelStatus, "info", "Traitement en cours...");
+
+  try {
+    const response = await fetch(EXCEL_TO_JSON_ENDPOINT, {
+      method: "POST",
+      body: formData,
+    });
+
+    console.log("Réponse reçue :", response);
+    console.log(response);
+
+    if (!response.ok) {
+      throw new Error("Erreur serveur");
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "suggestions.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    alert("Téléchargement réussi");
+    showStatus(excelStatus, "success", "Téléchargement réussi");
+  } catch (error) {
+    console.error("Erreur :", error);
+    alert(`Erreur : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+    showStatus(excelStatus, "error", `Erreur : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+  } finally {
+    excelBtn.disabled = false;
+    excelBtn.textContent = initialButtonText;
   }
 }
 
