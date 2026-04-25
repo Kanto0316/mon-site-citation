@@ -1,4 +1,5 @@
 const UPLOAD_ENDPOINT = "https://back-end-serveur-1.onrender.com/upload";
+const EXCEL_TO_JSON_ENDPOINT = "https://back-end-serveur-1.onrender.com/api/excel-to-json";
 const API_BASE = "https://back-end-serveur-1.onrender.com";
 
 const isIndexPage = Boolean(document.getElementById("uploadForm"));
@@ -24,6 +25,11 @@ function setupUploadPage() {
   const copyBtn = document.getElementById("copyBtn");
   const progressWrap = document.getElementById("progressWrap");
   const progressBar = document.getElementById("progressBar");
+  const excelForm = document.getElementById("excelForm");
+  const excelInput = document.getElementById("excelInput");
+  const excelSelectedFile = document.getElementById("excelSelectedFile");
+  const excelBtn = document.getElementById("excelBtn");
+  const excelStatus = document.getElementById("excelStatus");
 
   let progressTimer = null;
 
@@ -125,6 +131,59 @@ function setupUploadPage() {
       showStatus(statusMessage, "error", "Impossible de copier automatiquement le lien.");
     }
   });
+
+  if (excelForm && excelInput && excelSelectedFile && excelBtn && excelStatus) {
+    excelInput.addEventListener("change", () => {
+      const file = excelInput.files?.[0];
+      excelSelectedFile.textContent = file ? `Fichier sélectionné : ${file.name}` : "Aucun fichier sélectionné";
+    });
+
+    excelForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const file = excelInput.files?.[0];
+      if (!file) {
+        showStatus(excelStatus, "error", "Veuillez sélectionner un fichier Excel avant la transformation.");
+        return;
+      }
+
+      const initialButtonText = "Transformer en JSON";
+      excelBtn.disabled = true;
+      excelBtn.textContent = "Traitement en cours...";
+      showStatus(excelStatus, "info", "Traitement en cours...");
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(EXCEL_TO_JSON_ENDPOINT, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Le serveur a retourné une erreur pendant la transformation.");
+        }
+
+        const jsonBlob = await response.blob();
+        const downloadUrl = URL.createObjectURL(jsonBlob);
+        const anchor = document.createElement("a");
+        anchor.href = downloadUrl;
+        anchor.download = "suggestions.json";
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(downloadUrl);
+
+        showStatus(excelStatus, "success", "Transformation terminée. Le téléchargement de suggestions.json a démarré.");
+      } catch {
+        showStatus(excelStatus, "error", "Impossible de transformer le fichier. Vérifiez le format Excel puis réessayez.");
+      } finally {
+        excelBtn.disabled = false;
+        excelBtn.textContent = initialButtonText;
+      }
+    });
+  }
 
   function startFakeProgress(wrapper, bar) {
     wrapper.style.display = "block";

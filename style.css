@@ -180,6 +180,39 @@ h1 {
   display: none;
 }
 
+.tool-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.tool-section h2 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+
+.tool-subtitle {
+  margin-bottom: 14px;
+}
+
+.file-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.file-picker__label {
+  font-weight: 600;
+}
+
+.file-picker input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  background: #f8faff;
+  color: var(--text);
+}
+
 @media (max-width: 560px) {
   .card {
     padding: 18px;
