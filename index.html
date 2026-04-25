@@ -42,12 +42,12 @@
           <p class="subtitle tool-subtitle">Importez un fichier Excel puis téléchargez automatiquement le JSON généré.</p>
 
           <form id="excelForm" class="upload-form" novalidate>
-            <label class="file-picker" for="excelInput">
-              <input id="excelInput" name="file" type="file" accept=".xlsx,.xls" />
+            <label class="file-picker" for="excelFile">
+              <input id="excelFile" name="file" type="file" accept=".xlsx,.xls" />
               <span class="file-picker__label">Sélectionner un fichier Excel (.xlsx, .xls)</span>
             </label>
             <span id="excelSelectedFile" class="selected-file" aria-live="polite">Aucun fichier sélectionné</span>
-            <button id="excelBtn" class="btn btn-primary" type="submit">Transformer en JSON</button>
+            <button id="excelBtn" class="btn btn-primary" type="button" onclick="convertExcel()">Transformer en JSON</button>
           </form>
 
           <div id="excelStatus" class="status" role="status" aria-live="polite"></div>
