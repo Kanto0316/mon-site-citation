@@ -1,6 +1,10 @@
-const UPLOAD_ENDPOINT = "https://back-end-serveur-1.onrender.com/upload";
-const EXCEL_TO_JSON_ENDPOINT = "https://back-end-serveur-1.onrender.com/api/excel-to-json";
-const API_BASE = "https://back-end-serveur-1.onrender.com";
+const API_BASE_URL = "https://back-end-serveur.onrender.com";
+
+const API_ROUTES = {
+  upload: "/upload",
+  excelToJson: "/api/excel-to-json",
+  download: (id) => `/download/${encodeURIComponent(id)}`,
+};
 
 const isIndexPage = Boolean(document.getElementById("uploadForm"));
 const isDownloadPage = Boolean(document.getElementById("downloadInfo"));
@@ -11,6 +15,67 @@ if (isIndexPage) {
 
 if (isDownloadPage) {
   setupDownloadPage();
+}
+
+function getApiUrl(route) {
+  return `${API_BASE_URL}${route}`;
+}
+
+function normalizeApiUrl(url) {
+  if (!url) return "";
+
+  try {
+    return new URL(url, API_BASE_URL).href;
+  } catch (error) {
+    console.error("URL API invalide :", error);
+    return url;
+  }
+}
+
+async function buildApiError(response, fallbackMessage = "Erreur lors de la communication avec le serveur.") {
+  const serverMessage = await readErrorMessage(response);
+  const details = serverMessage ? ` Détail : ${serverMessage}` : "";
+
+  const messages = {
+    400: `La requête est invalide.${details}`,
+    401: `Vous devez être authentifié pour effectuer cette action.${details}`,
+    403: `Vous n'êtes pas autorisé à effectuer cette action.${details}`,
+    404: `La route API appelée est introuvable.${details}`,
+    413: `Le fichier est trop volumineux pour être envoyé.${details}`,
+    500: `Erreur interne du serveur.${details}`,
+    502: `Le backend Render est temporairement indisponible.${details}`,
+    503: `Le backend Render est indisponible ou en cours de démarrage.${details}`,
+  };
+
+  const message = messages[response.status] || `${fallbackMessage}${details}`;
+  const error = new Error(message);
+  error.status = response.status;
+  error.statusText = response.statusText;
+  return error;
+}
+
+async function readErrorMessage(response) {
+  try {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const data = await response.json();
+      return data?.message || data?.error || data?.details || "";
+    }
+
+    return await response.text();
+  } catch (error) {
+    console.error("Impossible de lire le détail de l'erreur API :", error);
+    return "";
+  }
+}
+
+function assertExpectedContentType(response, expectedContentType, errorMessage) {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!contentType.includes(expectedContentType)) {
+    throw new Error(errorMessage);
+  }
 }
 
 function setupUploadPage() {
@@ -80,27 +145,23 @@ function setupUploadPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch(UPLOAD_ENDPOINT, {
+      const response = await fetch(getApiUrl(API_ROUTES.upload), {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Erreur serveur");
+        throw await buildApiError(response, "Erreur pendant l'envoi du fichier.");
       }
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        throw new Error("Erreur de format");
-      }
+      assertExpectedContentType(response, "application/json", "Le serveur n'a pas renvoyé une réponse JSON valide.");
+      const data = await response.json();
 
       console.debug("Réponse brute du serveur:", data);
 
-      const finalLink = data?.download_url;
+      const finalLink = normalizeApiUrl(data?.download_url || data?.downloadUrl || data?.url);
       if (!finalLink) {
-        throw new Error("Réponse inattendue du serveur");
+        throw new Error("Le serveur n'a pas renvoyé de lien de téléchargement.");
       }
 
       showStatus(statusMessage, "success", "Upload terminé.");
@@ -109,10 +170,8 @@ function setupUploadPage() {
       downloadLink.textContent = finalLink;
       result.classList.remove("hidden");
     } catch (error) {
-      const knownMessages = new Set(["Erreur serveur", "Erreur de format", "Réponse inattendue du serveur"]);
-      const rawMessage = error instanceof Error ? error.message : "";
-      const errorMessage = knownMessages.has(rawMessage) ? rawMessage : "Erreur serveur";
-      showStatus(statusMessage, "error", errorMessage);
+      console.error("Erreur API upload :", error);
+      showStatus(statusMessage, "error", error instanceof Error ? error.message : "Erreur inconnue pendant l'envoi.");
     } finally {
       uploadBtn.disabled = false;
       stopFakeProgress(progressWrap, progressBar, progressTimer);
@@ -127,7 +186,8 @@ function setupUploadPage() {
     try {
       await navigator.clipboard.writeText(link);
       showStatus(statusMessage, "success", "Lien copié dans le presse-papiers.");
-    } catch {
+    } catch (error) {
+      console.error("Erreur presse-papiers :", error);
       showStatus(statusMessage, "error", "Impossible de copier automatiquement le lien.");
     }
   });
@@ -158,8 +218,6 @@ function setupUploadPage() {
 }
 
 async function convertExcel() {
-  console.log("Bouton cliqué");
-
   const fileInput = document.getElementById("excelFile");
   const excelBtn = document.getElementById("excelBtn");
   const excelStatus = document.getElementById("excelStatus");
@@ -169,11 +227,9 @@ async function convertExcel() {
   }
 
   const file = fileInput.files?.[0];
-  console.log(file);
 
   if (!file) {
-    alert("Veuillez sélectionner un fichier Excel");
-    showStatus(excelStatus, "error", "Veuillez sélectionner un fichier Excel");
+    showStatus(excelStatus, "error", "Veuillez sélectionner un fichier Excel.");
     return;
   }
 
@@ -186,19 +242,22 @@ async function convertExcel() {
   showStatus(excelStatus, "info", "Traitement en cours...");
 
   try {
-    const response = await fetch(EXCEL_TO_JSON_ENDPOINT, {
+    const response = await fetch(getApiUrl(API_ROUTES.excelToJson), {
       method: "POST",
       body: formData,
     });
 
-    console.log("Réponse reçue :", response);
-    console.log(response);
+    console.debug("Réponse conversion Excel :", response);
 
     if (!response.ok) {
-      throw new Error("Erreur serveur");
+      throw await buildApiError(response, "Erreur pendant la conversion Excel en JSON.");
     }
 
     const blob = await response.blob();
+    if (!blob.size) {
+      throw new Error("Le serveur a renvoyé un fichier JSON vide.");
+    }
+
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -208,12 +267,10 @@ async function convertExcel() {
     a.remove();
     window.URL.revokeObjectURL(url);
 
-    alert("Téléchargement réussi");
-    showStatus(excelStatus, "success", "Téléchargement réussi");
+    showStatus(excelStatus, "success", "Téléchargement du JSON réussi.");
   } catch (error) {
-    console.error("Erreur :", error);
-    alert(`Erreur : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
-    showStatus(excelStatus, "error", `Erreur : ${error instanceof Error ? error.message : "Erreur inconnue"}`);
+    console.error("Erreur API Excel -> JSON :", error);
+    showStatus(excelStatus, "error", error instanceof Error ? error.message : "Erreur inconnue pendant la conversion.");
   } finally {
     excelBtn.disabled = false;
     excelBtn.textContent = initialButtonText;
@@ -253,24 +310,26 @@ async function setupDownloadPage() {
 
   showStatus(status, "info", "Chargement des informations du fichier...");
 
-  const endpoint = `${API_BASE}/download/${encodeURIComponent(id)}`;
+  const endpoint = getApiUrl(API_ROUTES.download(id));
 
   try {
     const response = await fetch(endpoint, { method: "GET" });
 
     if (!response.ok) {
-      throw new Error("Fichier introuvable ou indisponible.");
+      throw await buildApiError(response, "Erreur lors de la récupération du fichier.");
     }
 
+    assertExpectedContentType(response, "application/json", "Le serveur n'a pas renvoyé les informations du fichier au format JSON.");
     const data = await response.json();
     const serverFileName = data.fileName || data.name || `fichier-${id}`;
-    const directUrl = data.url || endpoint;
+    const directUrl = normalizeApiUrl(data.url || data.download_url || data.downloadUrl || endpoint);
 
     fileName.textContent = serverFileName;
     downloadBtn.href = directUrl;
     info.classList.remove("hidden");
     showStatus(status, "success", "Votre fichier est prêt.");
   } catch (error) {
-    showStatus(status, "error", error.message || "Erreur lors de la récupération du fichier.");
+    console.error("Erreur API téléchargement :", error);
+    showStatus(status, "error", error instanceof Error ? error.message : "Erreur lors de la récupération du fichier.");
   }
 }
