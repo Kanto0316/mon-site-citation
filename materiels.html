@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Demande matériels - Suivi Matériel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWix+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8A6NfA5RkXU4Q9z+7A8R2f2Y6xQfHXA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+      .materials-page .search-panel .input-group {
+        position: relative;
+      }
+
+      .materials-page .search-input__icon-wrap {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px !important;
+        height: 24px !important;
+        flex: 0 0 24px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .materials-page .search-input__icon,
+      .materials-page .search-input__icon-wrap img,
+      .materials-page .search-panel img {
+        width: 24px !important;
+        height: 24px !important;
+        object-fit: contain !important;
+      }
+
+      .materials-page #materialsSearchInput {
+        padding-left: 3rem;
+      }
+
+      .materials-page #materialsTableBody tr {
+        cursor: pointer;
+      }
+
+      .materials-page #materialsTableBody tr:hover {
+        background: rgba(59, 130, 246, 0.08);
+      }
+
+      .materials-page .table-wrapper--shared {
+        max-height: clamp(20rem, 56vh, 36rem);
+      }
+
+      .materials-page .data-table {
+        font-size: 0.9rem;
+      }
+
+      .materials-page .data-table th,
+      .materials-page .data-table td {
+        padding: 0.56rem 0.58rem;
+        line-height: 1.28;
+      }
+
+      .materials-page .data-table th {
+        font-size: 0.82rem;
+      }
+
+      .materials-page .data-table td {
+        font-size: 0.88rem;
+        vertical-align: middle;
+      }
+
+      .materials-page #materialCartFab,
+      .materials-page .cart-fab {
+        right: 24px !important;
+        left: auto !important;
+        bottom: 24px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+
+      .materials-page .cart-fab-icon {
+        width: 30px;
+        height: 30px;
+        object-fit: contain;
+        display: block;
+        margin: 0;
+        padding: 0;
+        transform: none;
+        flex-shrink: 0;
+      }
+
+      .materials-page .cart-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+      }
+
+      .materials-page .cart-badge.visible {
+        display: flex;
+      }
+
+      .materials-page .material-cart-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        margin: 0.75rem 0 1rem;
+        max-height: 45vh;
+        overflow: auto;
+      }
+
+      .materials-page .material-cart-card {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 14px;
+        padding: 0.65rem 0.75rem;
+        background: #f8fbff;
+      }
+
+      .materials-page .material-cart-card p {
+        margin: 0.2rem 0 0;
+        color: #64748b;
+      }
+
+      .materials-page .remove-cart-item-btn {
+        border: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        color: #0f172a;
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .materials-page .qty-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.5rem;
+      }
+
+      .materials-page .qty-control .btn {
+        min-height: 28px;
+        padding: 0.2rem 0.45rem;
+      }
+
+      .materials-page .qty-input {
+        width: 52px;
+        height: 36px;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-weight: 800;
+        font-size: 18px;
+        color: #111827;
+        outline: none;
+        box-shadow: none;
+        padding: 0;
+      }
+
+      .materials-page .qty-input:focus {
+        border: none;
+        outline: none;
+        box-shadow: none;
+        background: transparent;
+      }
+
+      .materials-page .qty-input::-webkit-outer-spin-button,
+      .materials-page .qty-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .materials-page .qty-input[type=number] {
+        -moz-appearance: textfield;
+      }
+
+      .materials-page .unit-select {
+        margin-left: 8px;
+        height: 32px;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        padding: 0 8px;
+        font-size: 14px;
+      }
+
+      .materials-page #exportTitleInput.is-error,
+      .materials-page #exportTitleInput.is-error:focus {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+      }
+
+      .materials-page #exportTitleInput.is-shaking {
+        animation: site-lock-input-shake 300ms ease-in-out 1;
+      }
+
+      .materials-page .materials-hint {
+        margin: 14px 0;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: #eef7ff;
+        color: #2563eb;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .materials-page .materials-hint button {
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        color: inherit;
+      }
+
+      .materials-page .empty-cart {
+        text-align: center;
+      }
+
+      .materials-page .empty-cart p {
+        margin: 0;
+      }
+
+      .materials-page .empty-cart-hint {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #6b7280;
+        text-align: center;
+      }
+
+
+      .materials-page .btn.is-disabled-soft,
+      .materials-page .btn.is-disabled-soft:active {
+        opacity: 0.6;
+        transform: none;
+        pointer-events: none;
+      }
+
+      .materials-page #materialCartFab.bounce {
+        animation: material-cart-fab-bounce 300ms ease;
+      }
+
+      @keyframes material-cart-fab-bounce {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+        100% { transform: scale(1); }
+      }
+
+    
+      .materials-page #requestPngModal .site-input-feedback-row {
+        width: 100%;
+        margin-top: 0.24rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .materials-page #requestPngModal #exportTitleCounter {
+        width: auto;
+        text-align: right;
+        margin-top: 0;
+        flex-shrink: 0;
+      }
+
+      .materials-page #manualMaterialDesignationInput.input-error,
+      .materials-page #manualMaterialDesignationInput.input-error:focus {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+      }
+
+      .materials-page #manualMaterialDesignationInput.shake {
+        animation: site-lock-input-shake 300ms ease-in-out 1;
+      }
+
+      .materials-page .request-png-preview-wrap {
+        margin: 0.4rem 0 0.9rem;
+      }
+
+      .materials-page .preview-image-scroll {
+        max-height: 45vh;
+        overflow: auto;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        touch-action: pan-x pan-y pinch-zoom;
+      }
+
+      .materials-page .preview-image-scroll img {
+        width: 100%;
+        height: auto;
+        display: block;
+        transform-origin: center center;
+      }
+
+      .materials-page .request-png-preview-image {
+        border-radius: 10px;
+      }
+
+
+
+
+      .materials-page .export-img-btn {
+        background: var(--green-color, var(--success, #22c55e));
+        color: #fff;
+        border: none;
+      }
+
+      .materials-page .export-img-btn:hover,
+      .materials-page .export-img-btn:active {
+        filter: brightness(0.95);
+      }
+
+      .materials-page #confirmRequestPngBtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .materials-page #confirmRequestPngBtn .btn-loader {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255,255,255,0.35);
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        animation: request-png-spin 0.8s linear infinite;
+        display: inline-block;
+        margin-right: 10px;
+        flex-shrink: 0;
+      }
+
+      .materials-page #confirmRequestPngBtn .btn-loader.hidden {
+        display: none;
+      }
+
+      .materials-page #confirmRequestPngBtn.loading,
+      .materials-page #confirmRequestPngBtn.loading:active {
+        opacity: 0.75;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .materials-page #requestPngModal .modal-content.is-exporting {
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      .materials-page .page3-sub-info {
+        align-items: center;
+        display: flex;
+        gap: 0.65rem;
+      }
+
+      .materials-page .materials-export-btn {
+        min-height: 30px;
+        padding: 0.28rem 0.72rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        line-height: 1;
+      }
+
+      .materials-page .page3-summary-header {
+        align-items: center;
+      }
+
+      .materials-page .page3-title-block #openManualMaterialBtn {
+        margin: 0;
+      }
+
+      .materials-page .table-wrapper--shared {
+        height: 100%;
+        max-height: none;
+        padding-bottom: 70px;
+      }
+
+      @keyframes request-png-spin {
+        to { transform: rotate(360deg); }
+      }
+</style>
+  </head>
+  <body data-page="all-materials" class="page3 materials-page">
+    <div class="app-shell app-shell--wide">
+      <header class="app-header app-header--detail">
+        <div class="app-header__side app-header__side--left">
+          <button class="back-button" type="button" id="materialsBackButton" aria-label="Retour"><img src="Icon/btn-retour.png" alt="retour" class="btn-retour" /></button>
+        </div>
+        <div class="app-header__center">
+          <div class="header-title header-title--stacked">
+            <h1>Demande matériels</h1>
+          </div>
+        </div>
+        <div class="app-header__side app-header__side--right" aria-hidden="true"></div>
+      </header>
+
+      <main class="page-content page-content--wide main-content">
+        <section class="surface-card table-card section">
+          <div class="section-heading section-heading--table">
+            <div class="header-top page3-summary-header">
+              <div class="title-block page3-title-block">
+                <h2 class="section-title">Tableau des matériels</h2>
+              </div>
+              <button id="openManualMaterialBtn" class="btn btn-secondary" type="button">+ Créer une demande</button>
+            </div>
+          </div>
+          <div class="page3-sub-info">
+            <div id="materialsCount" class="article-count page3-article-count">
+              <span class="count-number page3-count-number">0</span>
+              <span class="count-label page3-count-label">Matériels</span>
+            </div>
+            <button id="materialsExportBtn" class="btn btn-export materials-export-btn hidden" type="button" hidden>
+              Exporter
+            </button>
+          </div>
+          <div id="materialsHint" class="materials-hint hidden">
+            <span>👋 Astuce : appuyez sur un matériel pour l’ajouter à votre demande.</span>
+            <button id="closeMaterialsHint" type="button" aria-label="Fermer l’astuce">×</button>
+          </div>
+          <div class="search-panel search-panel--inline">
+            <label class="input-group">
+              <span class="search-input__icon-wrap" aria-hidden="true">
+                <img src="Icon/Recherche.png" alt="" class="search-input__icon" />
+              </span>
+              <input id="materialsSearchInput" class="search-input" type="text" placeholder="Rechercher un matériel..." autocomplete="off" />
+              <button id="materialsClearSearchBtn" class="clear-search-btn" type="button" aria-label="Effacer la recherche">×</button>
+            </label>
+          </div>
+          <div class="table-container table-container--card">
+            <div class="table-wrapper table-wrapper--shared">
+              <table class="data-table" id="materialsDataTable">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Désignation</th>
+                  </tr>
+                </thead>
+                <tbody id="materialsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <p id="materialsEmptyState" class="empty-state" hidden>Aucun matériel disponible.</p>
+        </section>
+      </main>
+
+      <button id="materialCartFab" class="fab fab-add cart-fab" type="button" aria-label="Voir la demande matériel">
+        <img src="Icon/chariot-a-plat.png" alt="" aria-hidden="true" class="cart-fab-icon" />
+        <span id="materialCartBadge" class="cart-badge">0</span>
+      </button>
+
+      <dialog id="materialCartModal" class="modal-card">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">Demande de matériel</h3>
+            <p id="cartSelectedCount" class="modal-subtitle">0 matériel sélectionné</p>
+          </div>
+          <div id="materialCartList" class="material-cart-list"></div>
+          <div class="modal-actions modal-actions__row modal-actions__row--pair">
+            <button id="clearMaterialCartBtn" class="btn btn-secondary" type="button">Vider</button>
+            <button id="downloadRequestPngBtn" class="btn btn-primary export-img-btn" type="button">Exporter IMG</button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog id="requestPngModal" class="modal-card">
+          <div class="modal-content modal-content--site-create">
+          <div class="modal-header">
+            <h3 class="modal-title">Exporter la demande</h3>
+            <p class="modal-subtitle">Personnalisez le titre affiché dans l’image PNG.</p>
+          </div>
+          <label class="input-group input-group--site-create">
+            <span>Titre de la demande</span>
+            <input id="exportTitleInput" type="text" maxlength="25" placeholder="Ex : Andraharo,..." autocomplete="off" />
+            <div class="site-input-feedback-row">
+              <span aria-hidden="true"></span>
+              <span id="exportTitleCounter" class="input-char-counter" aria-live="polite">0 / 25</span>
+            </div>
+          </label>
+          <p id="exportTitleError" class="form-error" aria-live="polite"></p>
+          <div class="modal-actions modal-actions--split modal-actions--site-create">
+            <button id="cancelRequestPngBtn" class="btn btn-neutral" type="button">Annuler</button>
+            <button id="confirmRequestPngBtn" class="btn btn-success" type="button">
+              <span class="btn-loader hidden" aria-hidden="true"></span>
+              <span class="btn-text">Télécharger</span>
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      
+
+
+      <dialog id="requestPngPreviewModal" class="modal-card">
+        <div class="modal-content modal-content--site-create">
+          <div class="modal-header">
+            <h2 class="modal-title">Image générée</h2>
+            <p class="modal-subtitle">Votre demande a été téléchargée avec succès.</p>
+          </div>
+          <div class="request-png-preview-wrap preview-image-scroll">
+            <img id="requestPngPreviewImage" class="request-png-preview-image" alt="Aperçu demande matériel" />
+          </div>
+          <div class="modal-actions modal-actions--split modal-actions--site-create">
+            <button id="requestPngPreviewOkBtn" class="btn btn-success" type="button">OK</button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog id="manualMaterialModal" class="modal-card">
+        <div class="modal-content modal-content--site-create">
+          <div class="modal-header">
+            <h2>Ajouter un matériel</h2>
+          </div>
+          <label class="input-group input-group--site-create">
+            <span>Code</span>
+            <input id="manualMaterialCodeInput" type="text" placeholder=" " autocomplete="off" />
+          </label>
+          <label class="input-group input-group--site-create">
+            <span>Désignation</span>
+            <input id="manualMaterialDesignationInput" type="text" placeholder=" " autocomplete="off" />
+          </label>
+          <p id="manualMaterialError" class="form-error" aria-live="polite"></p>
+          <div class="modal-actions modal-actions--split modal-actions--site-create">
+            <button id="cancelManualMaterialBtn" class="btn btn-neutral" type="button">Annuler</button>
+            <button id="saveManualMaterialBtn" class="btn btn-success" type="button">Enregistrer</button>
+          </div>
+        </div>
+      </dialog>
+
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="js/maintenance-banner.js"></script>
+    <script type="module" src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script type="module" src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script type="module" src="js/materiels.js"></script>
+  </body>
+</html>

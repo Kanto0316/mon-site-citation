@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Gestion des utilisateurs - Suivi Matériel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      body[data-page="users-management"] .table-wrapper--users {
+        box-sizing: border-box;
+        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+      }
+    </style>
+  </head>
+  <body data-page="users-management">
+    <div class="app-shell app-shell--wide">
+      <header class="app-header app-header--detail">
+        <div class="app-header__side app-header__side--left">
+          <button id="usersBackButton" class="back-button" type="button" aria-label="Retour"><img src="Icon/btn-retour.png" alt="retour" class="btn-retour" /></button>
+        </div>
+        <div class="app-header__center">
+          <div class="header-title"><h1>Gestion Admin</h1></div>
+        </div>
+        <div class="app-header__side app-header__side--right" aria-hidden="true"></div>
+      </header>
+      <main class="page-content page-content--wide main-content">
+        <section class="surface-card details-card">
+          <div class="maintenance-card-header">
+            <h2 class="section-title">Maintenance de la page</h2>
+            <div class="maintenance-toggle-row">
+              <label class="switch" for="maintenanceToggle">
+                <input id="maintenanceToggle" type="checkbox" role="switch" aria-label="Activer ou désactiver la maintenance" />
+                <span class="slider"></span>
+              </label>
+              <span id="maintenanceStatusText" class="maintenance-toggle-row__status">Désactivé</span>
+            </div>
+          </div>
+        </section>
+        <button id="adminMessageFab" class="fab admin-message-fab" type="button" aria-haspopup="dialog" aria-controls="adminMessageModal" aria-label="Envoyer un message aux utilisateurs">📢</button>
+        <div id="adminMessageModal" class="admin-message-modal" role="dialog" aria-modal="true" aria-labelledby="adminMessageTitle" hidden>
+          <div class="admin-message-modal__backdrop" data-admin-message-close></div>
+          <section class="admin-message-modal__panel surface-card" aria-label="Message aux utilisateurs">
+            <h2 id="adminMessageTitle" class="section-title">📢 Message aux utilisateurs</h2>
+            <form id="adminMessageForm" class="admin-message-form">
+              <fieldset class="admin-message-recipients" aria-labelledby="adminMessageRecipientsLegend">
+                <legend id="adminMessageRecipientsLegend">Destinataires</legend>
+                <div id="adminMessageRecipientsDropdown" class="admin-message-recipients-dropdown">
+                  <button id="adminMessageRecipientsToggle" class="admin-message-recipients-dropdown__toggle" type="button" aria-expanded="false" aria-controls="adminMessageRecipientsMenu">
+                    <span id="adminMessageRecipientsSummary">Tous les utilisateurs</span>
+                    <span class="admin-message-recipients-dropdown__chevron" aria-hidden="true">▾</span>
+                  </button>
+                  <div id="adminMessageRecipientsMenu" class="admin-message-recipients-dropdown__menu" hidden>
+                    <label class="admin-message-recipient admin-message-recipient--all" for="adminMessageAllRecipients">
+                      <input id="adminMessageAllRecipients" type="checkbox" checked />
+                      <span>Tous les utilisateurs</span>
+                    </label>
+                    <div id="adminMessageRecipientsList" class="admin-message-recipients__list" aria-label="Liste des utilisateurs"></div>
+                  </div>
+                </div>
+                <p id="adminMessageRecipientsHint" class="admin-message-recipients__hint" hidden>Sélectionnez au moins un destinataire.</p>
+              </fieldset>
+              <label class="admin-message-field" for="adminMessageInputTitle">
+                <span>Titre du message</span>
+                <div class="admin-message-highlighted-input admin-message-highlighted-input--title">
+                  <div id="adminMessageInputTitle" class="admin-message-editable" contenteditable="true" role="textbox" aria-required="true" data-maxlength="120"></div>
+                </div>
+              </label>
+              <div class="admin-message-field">
+                <label for="adminMessageInputBody">Corps du message</label>
+                <div class="admin-message-body-field">
+                  <div class="admin-message-highlighted-input">
+                    <div id="adminMessageInputBody" class="admin-message-editable admin-message-editable--body" contenteditable="true" role="textbox" aria-required="true" aria-multiline="true" data-maxlength="1200"></div>
+                  </div>
+                  <div id="adminMessageVariablesMenu" class="admin-message-variables" aria-label="Variables disponibles">
+                    <button type="button" data-admin-message-variable="{Nom}">{Nom}</button>
+                    <button type="button" data-admin-message-variable="{Prénom}">{Prénom}</button>
+                    <button type="button" data-admin-message-variable="{NomComplet}">{NomComplet}</button>
+                    <button type="button" data-admin-message-variable="{Mail}">{Mail}</button>
+                    <button type="button" data-admin-message-variable="{Role}">{Role}</button>
+                    <button type="button" data-admin-message-variable="{Point}">{Point}</button>
+                  </div>
+                </div>
+              </div>
+              <div class="admin-message-actions modal-actions modal-actions--split modal-actions--site-create">
+                <button id="adminMessageCancelButton" type="button" class="btn btn-neutral">Annuler</button>
+                <button id="adminMessageSendButton" type="submit" class="btn btn-success">
+                  <span class="btn-label-default">Envoyer</span>
+                  <span class="btn-loading-spinner" aria-hidden="true"></span>
+                  <span class="btn-label-loading" aria-hidden="true">Envoi...</span>
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+        <section class="surface-card table-card">
+          <h2 class="section-title" id="usersCardHeader"><span class="users-card-online-label">En ligne</span> : <span class="users-card-stat users-card-stat--online">0</span><br />Tous les utilisateurs : <span class="users-card-stat users-card-stat--total">0</span></h2>
+          <div class="users-search-field input-group">
+            <label class="visually-hidden" for="usersSearchInput">Rechercher un utilisateur</label>
+            <div class="users-search-field__control">
+              <span class="users-search-field__icon" aria-hidden="true">🔍</span>
+              <input id="usersSearchInput" type="search" autocomplete="off" placeholder="Rechercher un utilisateur..." />
+            </div>
+          </div>
+          <div class="table-wrapper table-wrapper--users">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Point</th>
+                  <th>Photo</th>
+                  <th>Nom</th>
+                  <th>Dernière activité</th>
+                  <th>Email</th>
+                  <th>Rôle</th>
+                  <th>Autorisé (maintenance)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </div>
+    <script type="module" src="js/maintenance-banner.js"></script>
+    <script type="module" src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module">
+      import { addDoc, collection, onSnapshot, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+      import { firebaseDb } from './js/firebase-core.js';
+      import { MESSAGE_VARIABLES, replaceVariables } from './js/message-variables.js';
+
+      function cleanString(value) {
+        return String(value || '').trim();
+      }
+
+      function toLower(value) {
+        return cleanString(value).toLowerCase();
+      }
+
+      function normalizeSearchText(value) {
+        return cleanString(value)
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+      }
+
+      function escapeHtml(value) {
+        return cleanString(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function resolveDisplayName(user) {
+        const displayName = cleanString(user.displayName || user.username || user.name);
+        if (displayName) {
+          return displayName;
+        }
+        const emailPrefix = cleanString(user.email).split('@')[0];
+        return emailPrefix || 'Utilisateur';
+      }
+
+      function getInitials(name) {
+        const normalized = cleanString(name).replace(/\s+/g, ' ').replace(/[^\p{L}\p{N} ]/gu, '');
+        return (normalized.slice(0, 2) || 'US').toUpperCase();
+      }
+
+      function isAdminUser(user) {
+        const email = toLower(user?.email);
+        const username = cleanString(user?.username || user?.name);
+        const role = toLower(user?.role);
+        return email === 'andrainaaina@gmail.com' || username === 'Admin' || role === 'admin' || role === 'standard' || role === 'adjoint' || role === 'adjoint admin';
+      }
+
+      function resolveRole(user) {
+        const role = cleanString(user.role);
+        const normalized = toLower(role);
+        if (normalized === 'admin') {
+          return 'admin';
+        }
+        if (normalized === 'standard' || normalized === 'adjoint' || normalized === 'adjoint admin') {
+          return 'Adjoint Admin';
+        }
+        return 'Limité';
+      }
+
+      function resolveMaintenanceAuthorized(user) {
+        if (typeof user.maintenanceAuthorized === 'boolean') {
+          return user.maintenanceAuthorized;
+        }
+        if (typeof user.maintenanceAccess === 'boolean') {
+          return user.maintenanceAccess;
+        }
+        return false;
+      }
+
+      function syncDefaults(user) {
+        const email = cleanString(user.email);
+        if (!user.id || !email) {
+          return;
+        }
+
+        const updates = {};
+        if (!cleanString(user.role)) {
+          updates.role = 'Limité';
+        }
+
+        const maintenanceAuthorized = resolveMaintenanceAuthorized(user);
+        if (!Object.prototype.hasOwnProperty.call(user, 'maintenanceAuthorized')) {
+          updates.maintenanceAuthorized = maintenanceAuthorized;
+        }
+        if (!Object.prototype.hasOwnProperty.call(user, 'maintenanceAccess')) {
+          updates.maintenanceAccess = maintenanceAuthorized;
+        }
+
+        if (Object.keys(updates).length) {
+          updates.updatedAt = serverTimestamp();
+          setDoc(doc(firebaseDb, 'users', user.id), updates, { merge: true }).catch(() => {});
+        }
+      }
+
+      function parseActivityDate(value) {
+        if (!value) {
+          return null;
+        }
+        let normalizedValue = value;
+        if (typeof value?.toDate === 'function') {
+          normalizedValue = value.toDate();
+        } else if (typeof value?.seconds === 'number') {
+          normalizedValue = new Date(value.seconds * 1000);
+        }
+        const parsed = new Date(normalizedValue);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      }
+
+      function isUserOnline(user, referenceDate = new Date()) {
+        if (user?.online === true || toLower(user?.presence) === 'online' || toLower(user?.status) === 'online') {
+          return true;
+        }
+        const lastSeenDate = parseActivityDate(user?.lastSeen || user?.lastActivity);
+        if (!lastSeenDate) {
+          return false;
+        }
+        return Math.max(0, referenceDate.getTime() - lastSeenDate.getTime()) < 5 * 60000;
+      }
+
+      function updateUsersCardHeader(users) {
+        const usersCardHeader = document.getElementById('usersCardHeader');
+        if (!usersCardHeader) {
+          return;
+        }
+        const referenceDate = new Date();
+        const onlineCount = users.filter((user) => isUserOnline(user, referenceDate)).length;
+        usersCardHeader.innerHTML = `<span class="users-card-online-label">En ligne</span> : <span class="users-card-stat users-card-stat--online">${onlineCount}</span><br />Tous les utilisateurs : <span class="users-card-stat users-card-stat--total">${users.length}</span>`;
+      }
+
+      function formatLastActivity(value, referenceDate = new Date()) {
+        const activityDate = parseActivityDate(value);
+        if (!activityDate) {
+          return '-';
+        }
+
+        const elapsedMs = Math.max(0, referenceDate.getTime() - activityDate.getTime());
+        const elapsedMinutes = Math.floor(elapsedMs / 60000);
+        if (elapsedMinutes < 5) {
+          return '🟢 En ligne';
+        }
+        if (elapsedMinutes < 60) {
+          return `Il y a ${elapsedMinutes} min`;
+        }
+
+        const elapsedHours = Math.floor(elapsedMinutes / 60);
+        if (elapsedHours < 24) {
+          return `Il y a ${elapsedHours} h`;
+        }
+
+        const elapsedDays = Math.floor(elapsedHours / 24);
+        if (elapsedDays < 7) {
+          return `Il y a ${elapsedDays} jour${elapsedDays > 1 ? 's' : ''}`;
+        }
+
+        const elapsedWeeks = Math.floor(elapsedDays / 7);
+        if (elapsedDays < 30) {
+          return `Il y a ${elapsedWeeks} semaine${elapsedWeeks > 1 ? 's' : ''}`;
+        }
+
+        const elapsedMonths = Math.max(1, Math.floor(elapsedDays / 30));
+        return `Il y a ${elapsedMonths} mois`;
+      }
+
+      function splitFullName(value) {
+        return cleanString(value).replace(/\s+/g, ' ').split(' ').filter(Boolean);
+      }
+
+      function resolveFirstName(user) {
+        const explicitFirstName = cleanString(user.firstName || user.prenom || user['prénom']);
+        if (explicitFirstName) {
+          return explicitFirstName;
+        }
+        const nameParts = splitFullName(resolveDisplayName(user));
+        return nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : nameParts[0] || '';
+      }
+
+      function resolveLastName(user) {
+        const explicitLastName = cleanString(user.lastName || user.nom);
+        if (explicitLastName) {
+          return explicitLastName;
+        }
+        const nameParts = splitFullName(resolveDisplayName(user));
+        return nameParts.length > 1 ? nameParts[nameParts.length - 1] : resolveDisplayName(user);
+      }
+
+      function userMatchesSearch(user, query) {
+        if (!query) {
+          return true;
+        }
+        return [
+          resolveLastName(user),
+          resolveFirstName(user),
+          resolveDisplayName(user),
+          user.email,
+        ].some((value) => normalizeSearchText(value).includes(query));
+      }
+
+      function sortUsersByPointsAndName(users, pointsByUser) {
+        return [...users].sort((a, b) => {
+          const pointsA = Number(pointsByUser?.[a.id] || 0);
+          const pointsB = Number(pointsByUser?.[b.id] || 0);
+          if (pointsA !== pointsB) {
+            return pointsB - pointsA;
+          }
+          return resolveDisplayName(a).localeCompare(resolveDisplayName(b), 'fr', { sensitivity: 'base' });
+        });
+      }
+
+      function renderUsers(users, pointsByUser = {}) {
+        const tableBody = document.getElementById('usersTableBody');
+        if (!tableBody) {
+          return;
+        }
+
+        const sortedUsers = sortUsersByPointsAndName(users, pointsByUser);
+        if (!sortedUsers.length) {
+          tableBody.innerHTML = '<tr><td colspan="8" class="users-empty-cell">Aucun utilisateur trouvé.</td></tr>';
+          return;
+        }
+
+        const rows = sortedUsers
+          .map((user) => {
+            const displayName = resolveDisplayName(user);
+            const email = cleanString(user.email);
+            const role = resolveRole(user);
+            const maintenanceAuthorized = resolveMaintenanceAuthorized(user);
+            const photoURL = cleanString(user.photoURL || user.avatarUrl || user.avatar);
+            const isPrimaryAdmin = isAdminUser(user);
+
+            const avatarMarkup = photoURL
+              ? `<span class="users-avatar"><img src="${photoURL.replace(/"/g, '&quot;')}" alt="Avatar de ${displayName.replace(/"/g, '&quot;')}" /></span>`
+              : `<span class="users-avatar" aria-hidden="true">${getInitials(displayName)}</span>`;
+
+            return `
+              <tr data-user-id="${user.id}">
+                <td class="users-point-cell">${Number(pointsByUser?.[user.id] || 0)}</td>
+                <td>${avatarMarkup}</td>
+                <td>${escapeHtml(displayName)}</td>
+                <td class="users-last-activity-cell">${formatLastActivity(user.lastActivity)}</td>
+                <td class="users-email-cell" title="${escapeHtml(email) || '-'}">${escapeHtml(email) || '-'}</td>
+                <td>
+                  ${isPrimaryAdmin ? 'admin' : `
+                  <select class="users-role-select" data-user-role="${user.id}">
+                    <option value="Adjoint Admin" ${role === 'Adjoint Admin' ? 'selected' : ''}>Adjoint Admin</option>
+                    <option value="Limité" ${role === 'Limité' ? 'selected' : ''}>Limité</option>
+                  </select>`}
+                </td>
+                <td class="maintenance-access-cell">
+                  <input
+                    type="checkbox"
+                    class="maintenance-access-checkbox"
+                    data-user-maintenance-access="${user.id}"
+                    ${maintenanceAuthorized ? 'checked' : ''}
+                    aria-label="Autoriser ${displayName.replace(/"/g, '&quot;')} pendant la maintenance"
+                  />
+                </td>
+                <td>
+                  <button type="button" class="btn-delete" data-delete-user="${user.id}" ${isPrimaryAdmin ? 'disabled' : ''}>Supprimer</button>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        tableBody.innerHTML = rows;
+
+        tableBody.querySelectorAll('[data-user-role]').forEach((select) => {
+          select.addEventListener('change', async () => {
+            const userId = select.getAttribute('data-user-role');
+            const selected = toLower(select.value) === 'adjoint admin' ? 'Adjoint Admin' : 'Limité';
+            try {
+              await setDoc(
+                doc(firebaseDb, 'users', userId),
+                {
+                  role: selected,
+                  updatedAt: serverTimestamp(),
+                },
+                { merge: true },
+              );
+              await window.StorageService?.recordCurrentUserActivity?.();
+              window.UiService?.showToast('Rôle mis à jour.');
+            } catch (_error) {
+              window.UiService?.showToast('Impossible de mettre à jour le rôle.');
+            }
+          });
+        });
+
+        tableBody.querySelectorAll('[data-user-maintenance-access]').forEach((checkbox) => {
+          checkbox.addEventListener('change', async () => {
+            const userId = checkbox.getAttribute('data-user-maintenance-access');
+            const checked = checkbox.checked;
+            try {
+              await setDoc(
+                doc(firebaseDb, 'users', userId),
+                {
+                  maintenanceAuthorized: checked,
+                  maintenanceAccess: checked,
+                  updatedAt: serverTimestamp(),
+                },
+                { merge: true },
+              );
+              await window.StorageService?.recordCurrentUserActivity?.();
+              window.UiService?.showToast('Accès maintenance mis à jour.');
+            } catch (_error) {
+              checkbox.checked = !checked;
+              window.UiService?.showToast('Impossible de mettre à jour l’accès maintenance.');
+            }
+          });
+        });
+
+        tableBody.querySelectorAll('[data-delete-user]').forEach((button) => {
+          button.addEventListener('click', async () => {
+            const userId = button.getAttribute('data-delete-user');
+            if (!userId || !window.StorageService?.deleteUser) {
+              return;
+            }
+            button.disabled = true;
+            try {
+              await window.StorageService.deleteUser(userId);
+              window.UiService?.showToast('Utilisateur supprimé.');
+            } catch (_error) {
+              window.UiService?.showToast('Impossible de supprimer cet utilisateur.');
+            } finally {
+              button.disabled = false;
+            }
+          });
+        });
+      }
+
+      let currentUsers = [];
+      let currentPointsByUser = {};
+      let currentUsersSearchQuery = '';
+      let lastActivityRefreshId = null;
+
+      function renderCurrentUsers() {
+        updateUsersCardHeader(currentUsers);
+        const filteredUsers = currentUsers.filter((user) => userMatchesSearch(user, currentUsersSearchQuery));
+        renderUsers(filteredUsers, currentPointsByUser);
+      }
+
+      lastActivityRefreshId = window.setInterval(renderCurrentUsers, 60000);
+      window.addEventListener('pagehide', () => {
+        if (lastActivityRefreshId) {
+          window.clearInterval(lastActivityRefreshId);
+        }
+      });
+
+      const usersSearchInput = document.getElementById('usersSearchInput');
+      usersSearchInput?.addEventListener('input', () => {
+        currentUsersSearchQuery = normalizeSearchText(usersSearchInput.value);
+        renderCurrentUsers();
+      });
+
+      const adminMessageFab = document.getElementById('adminMessageFab');
+      const adminMessageModal = document.getElementById('adminMessageModal');
+      const adminMessageForm = document.getElementById('adminMessageForm');
+      const adminMessageTitleInput = document.getElementById('adminMessageInputTitle');
+      const adminMessageBodyInput = document.getElementById('adminMessageInputBody');
+      const adminMessageSendButton = document.getElementById('adminMessageSendButton');
+      const adminMessageCancelButton = document.getElementById('adminMessageCancelButton');
+      const adminMessageAllRecipients = document.getElementById('adminMessageAllRecipients');
+      const adminMessageRecipientsDropdown = document.getElementById('adminMessageRecipientsDropdown');
+      const adminMessageRecipientsToggle = document.getElementById('adminMessageRecipientsToggle');
+      const adminMessageRecipientsMenu = document.getElementById('adminMessageRecipientsMenu');
+      const adminMessageRecipientsSummary = document.getElementById('adminMessageRecipientsSummary');
+      const adminMessageRecipientsList = document.getElementById('adminMessageRecipientsList');
+      const adminMessageRecipientsHint = document.getElementById('adminMessageRecipientsHint');
+      const adminMessageVariablesMenu = document.getElementById('adminMessageVariablesMenu');
+      const adminMessageVariableButtons = Array.from(adminMessageVariablesMenu?.querySelectorAll('[data-admin-message-variable]') || []);
+      const ADMIN_MESSAGE_DRAFT_STORAGE_KEY = 'adminMessageDraft';
+      const ADMIN_MESSAGE_RECIPIENTS_STORAGE_KEY = 'adminMessageRecipients';
+      let isAdminMessageSending = false;
+      let isRestoringAdminMessageDraft = false;
+      let activeAdminMessageVariableField = adminMessageBodyInput;
+      const ADMIN_MESSAGE_VARIABLES = MESSAGE_VARIABLES;
+      const ADMIN_MESSAGE_VARIABLE_CLASS_BY_NAME = {
+        '{Nom}': 'admin-message-variable-token--nom',
+        '{Prénom}': 'admin-message-variable-token--prenom',
+        '{NomComplet}': 'admin-message-variable-token--nom-complet',
+        '{Mail}': 'admin-message-variable-token--mail',
+        '{Role}': 'admin-message-variable-token--role',
+        '{Point}': 'admin-message-variable-token--point',
+      };
+
+      function getSelectableMessageRecipients() {
+        return currentUsers
+          .filter((user) => user.id && !isAdminUser(user))
+          .sort((a, b) => resolveDisplayName(a).localeCompare(resolveDisplayName(b), 'fr', { sensitivity: 'base' }));
+      }
+      function getAdminMessageRecipientById(userId) {
+        return getSelectableMessageRecipients().find((user) => user.id === userId);
+      }
+
+      function getAdminMessageTargetRecipients(selectedRecipientIds) {
+        const recipients = getSelectableMessageRecipients();
+        if (!selectedRecipientIds) {
+          return recipients;
+        }
+        const selectedIds = new Set(selectedRecipientIds.map(String));
+        return recipients.filter((user) => selectedIds.has(String(user.id)));
+      }
+
+      function getAdminMessageEditorText(editor) {
+        return editor?.textContent || '';
+      }
+
+      function setAdminMessageEditorText(editor, value) {
+        if (!editor) {
+          return;
+        }
+        renderAdminMessageEditor(editor, String(value || ''));
+      }
+
+      function getAdminMessageCaretOffset(editor) {
+        const selection = window.getSelection();
+        if (!editor || !selection || selection.rangeCount === 0) {
+          return getAdminMessageEditorText(editor).length;
+        }
+        const range = selection.getRangeAt(0);
+        if (!editor.contains(range.startContainer)) {
+          return getAdminMessageEditorText(editor).length;
+        }
+        const prefixRange = range.cloneRange();
+        prefixRange.selectNodeContents(editor);
+        prefixRange.setEnd(range.startContainer, range.startOffset);
+        return prefixRange.toString().length;
+      }
+
+      function getAdminMessageSelectionOffsets(editor) {
+        const selection = window.getSelection();
+        const fallbackOffset = getAdminMessageEditorText(editor).length;
+        if (!editor || !selection || selection.rangeCount === 0) {
+          return { start: fallbackOffset, end: fallbackOffset };
+        }
+        const range = selection.getRangeAt(0);
+        if (!editor.contains(range.startContainer) || !editor.contains(range.endContainer)) {
+          return { start: fallbackOffset, end: fallbackOffset };
+        }
+        const startRange = range.cloneRange();
+        startRange.selectNodeContents(editor);
+        startRange.setEnd(range.startContainer, range.startOffset);
+        const endRange = range.cloneRange();
+        endRange.selectNodeContents(editor);
+        endRange.setEnd(range.endContainer, range.endOffset);
+        const start = startRange.toString().length;
+        const end = endRange.toString().length;
+        return { start: Math.min(start, end), end: Math.max(start, end) };
+      }
+
+      function setAdminMessageCaretOffset(editor, offset) {
+        if (!editor) {
+          return;
+        }
+        const targetOffset = Math.max(0, Math.min(Number(offset) || 0, getAdminMessageEditorText(editor).length));
+        const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+        let currentOffset = 0;
+        let node = walker.nextNode();
+        while (node) {
+          const nextOffset = currentOffset + node.textContent.length;
+          if (targetOffset <= nextOffset) {
+            const range = document.createRange();
+            range.setStart(node, targetOffset - currentOffset);
+            range.collapse(true);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            return;
+          }
+          currentOffset = nextOffset;
+          node = walker.nextNode();
+        }
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+
+      function createAdminMessageVariableToken(variable) {
+        const token = document.createElement('span');
+        token.className = `admin-message-variable-token ${ADMIN_MESSAGE_VARIABLE_CLASS_BY_NAME[variable] || ''}`.trim();
+        token.textContent = variable;
+        token.setAttribute('data-admin-message-token', variable);
+        return token;
+      }
+
+      function renderAdminMessageEditor(editor, message = getAdminMessageEditorText(editor), caretOffset = null) {
+        if (!editor) {
+          return;
+        }
+        const fragment = document.createDocumentFragment();
+        for (let index = 0; index < message.length;) {
+          const matchingVariable = ADMIN_MESSAGE_VARIABLES.find((variable) => message.startsWith(variable, index));
+          if (matchingVariable) {
+            fragment.appendChild(createAdminMessageVariableToken(matchingVariable));
+            index += matchingVariable.length;
+          } else {
+            let nextIndex = index + 1;
+            while (nextIndex < message.length && !ADMIN_MESSAGE_VARIABLES.some((variable) => message.startsWith(variable, nextIndex))) {
+              nextIndex += 1;
+            }
+            fragment.appendChild(document.createTextNode(message.slice(index, nextIndex)));
+            index = nextIndex;
+          }
+        }
+        editor.replaceChildren(fragment);
+        if (caretOffset !== null) {
+          setAdminMessageCaretOffset(editor, caretOffset);
+        }
+      }
+
+      function replaceEscapedNewlinesBeforeCaret(message, caretOffset) {
+        const safeCaretOffset = Math.max(0, Math.min(Number(caretOffset) || 0, message.length));
+        const beforeCaret = message.slice(0, safeCaretOffset);
+        const afterCaret = message.slice(safeCaretOffset);
+        const normalizedBeforeCaret = beforeCaret.replace(/\\n/g, '\n');
+        const normalizedAfterCaret = afterCaret.replace(/\\n/g, '\n');
+        return {
+          message: `${normalizedBeforeCaret}${normalizedAfterCaret}`,
+          caretOffset: normalizedBeforeCaret.length,
+        };
+      }
+
+      function normalizeAdminMessageEditor(editor) {
+        if (!editor) {
+          return;
+        }
+        const maxLength = Number(editor.dataset.maxlength || 0);
+        const caretOffset = getAdminMessageCaretOffset(editor);
+        const message = getAdminMessageEditorText(editor);
+        const newlineNormalizedMessage = replaceEscapedNewlinesBeforeCaret(message, caretOffset);
+        const normalizedMessage = maxLength > 0 ? newlineNormalizedMessage.message.slice(0, maxLength) : newlineNormalizedMessage.message;
+        renderAdminMessageEditor(editor, normalizedMessage, Math.min(newlineNormalizedMessage.caretOffset, normalizedMessage.length));
+      }
+
+      function renderAdminMessageTitle() {
+        renderAdminMessageEditor(adminMessageTitleInput);
+      }
+
+      function renderAdminMessageBody() {
+        renderAdminMessageEditor(adminMessageBodyInput);
+      }
+
+      function setActiveAdminMessageVariableButton(activeButton) {
+        adminMessageVariableButtons.forEach((button) => {
+          const isActive = button === activeButton;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+      }
+
+      function getSelectedRecipientIds() {
+        if (adminMessageAllRecipients?.checked) {
+          return null;
+        }
+        return Array.from(adminMessageRecipientsList?.querySelectorAll('[data-admin-message-recipient]:checked') || [])
+          .map((checkbox) => checkbox.value)
+          .filter(Boolean);
+      }
+
+      function updateAdminMessageRecipientSummary() {
+        if (!adminMessageRecipientsSummary) {
+          return;
+        }
+        if (adminMessageAllRecipients?.checked) {
+          adminMessageRecipientsSummary.textContent = 'Tous les utilisateurs';
+          return;
+        }
+        const selectedIds = getSelectedRecipientIds();
+        if (selectedIds.length === 1) {
+          const selectedUser = getAdminMessageRecipientById(selectedIds[0]);
+          adminMessageRecipientsSummary.textContent = selectedUser ? resolveDisplayName(selectedUser) : '1 utilisateur sélectionné';
+          return;
+        }
+        adminMessageRecipientsSummary.textContent = selectedIds.length > 1
+          ? `${selectedIds.length} utilisateurs sélectionnés`
+          : 'Sélectionner des destinataires';
+      }
+
+      function updateAdminMessageRecipientState() {
+        const sendDisabled = (!adminMessageAllRecipients?.checked && getSelectedRecipientIds().length === 0) || isAdminMessageSending;
+        if (adminMessageSendButton) {
+          adminMessageSendButton.disabled = sendDisabled;
+        }
+        if (adminMessageRecipientsHint) {
+          adminMessageRecipientsHint.hidden = !sendDisabled;
+        }
+        updateAdminMessageRecipientSummary();
+      }
+
+      function getCurrentAdminMessageRecipientsDraft() {
+        return {
+          allRecipients: Boolean(adminMessageAllRecipients?.checked),
+          selectedRecipientIds: Array.from(adminMessageRecipientsList?.querySelectorAll('[data-admin-message-recipient]:checked') || [])
+            .map((checkbox) => checkbox.value)
+            .filter(Boolean),
+        };
+      }
+
+      function persistAdminMessageRecipientsDraft() {
+        if (isRestoringAdminMessageDraft) {
+          return;
+        }
+        try {
+          window.localStorage?.setItem(ADMIN_MESSAGE_RECIPIENTS_STORAGE_KEY, JSON.stringify(getCurrentAdminMessageRecipientsDraft()));
+        } catch (_error) {
+          // Ignore storage errors so messaging remains usable in private/restricted contexts.
+        }
+      }
+
+      function persistAdminMessageDraft() {
+        try {
+          window.localStorage?.setItem(ADMIN_MESSAGE_DRAFT_STORAGE_KEY, JSON.stringify({
+            title: getAdminMessageEditorText(adminMessageTitleInput),
+            body: getAdminMessageEditorText(adminMessageBodyInput),
+          }));
+        } catch (_error) {
+          // Ignore storage errors so messaging remains usable in private/restricted contexts.
+        }
+      }
+
+      function clearAdminMessageDraft() {
+        try {
+          window.localStorage?.removeItem(ADMIN_MESSAGE_DRAFT_STORAGE_KEY);
+        } catch (_error) {
+          // Ignore storage errors.
+        }
+      }
+
+      function readAdminMessageStorage(key) {
+        try {
+          const rawDraft = window.localStorage?.getItem(key);
+          return rawDraft ? JSON.parse(rawDraft) : null;
+        } catch (_error) {
+          return null;
+        }
+      }
+
+      function getStoredAdminMessageDraft() {
+        return readAdminMessageStorage(ADMIN_MESSAGE_DRAFT_STORAGE_KEY);
+      }
+
+      function getStoredAdminMessageRecipientsDraft() {
+        const recipientsDraft = readAdminMessageStorage(ADMIN_MESSAGE_RECIPIENTS_STORAGE_KEY);
+        if (recipientsDraft) {
+          return recipientsDraft;
+        }
+        const legacyDraft = getStoredAdminMessageDraft();
+        if (legacyDraft && ('allRecipients' in legacyDraft || 'selectedRecipientIds' in legacyDraft)) {
+          return legacyDraft;
+        }
+        return null;
+      }
+
+      function migrateLegacyAdminMessageRecipientsDraft(recipientsDraft) {
+        if (!recipientsDraft || readAdminMessageStorage(ADMIN_MESSAGE_RECIPIENTS_STORAGE_KEY)) {
+          return;
+        }
+        try {
+          window.localStorage?.setItem(ADMIN_MESSAGE_RECIPIENTS_STORAGE_KEY, JSON.stringify({
+            allRecipients: recipientsDraft.allRecipients !== false,
+            selectedRecipientIds: Array.isArray(recipientsDraft.selectedRecipientIds) ? recipientsDraft.selectedRecipientIds.map(String) : [],
+          }));
+        } catch (_error) {
+          // Ignore storage errors.
+        }
+      }
+
+      function applyAdminMessageDraft() {
+        const draft = getStoredAdminMessageDraft();
+        const recipientsDraft = getStoredAdminMessageRecipientsDraft();
+        isRestoringAdminMessageDraft = true;
+        try {
+          if (adminMessageTitleInput) {
+            setAdminMessageEditorText(adminMessageTitleInput, draft?.title || '');
+          }
+          if (adminMessageBodyInput) {
+            setAdminMessageEditorText(adminMessageBodyInput, draft?.body || '');
+          }
+          if (adminMessageAllRecipients) {
+            adminMessageAllRecipients.checked = recipientsDraft?.allRecipients !== false;
+          }
+          const selectedIds = new Set(Array.isArray(recipientsDraft?.selectedRecipientIds) ? recipientsDraft.selectedRecipientIds.map(String) : []);
+          adminMessageRecipientsList?.querySelectorAll('[data-admin-message-recipient]').forEach((checkbox) => {
+            checkbox.checked = !adminMessageAllRecipients?.checked && selectedIds.has(checkbox.value);
+          });
+        } finally {
+          isRestoringAdminMessageDraft = false;
+        }
+        migrateLegacyAdminMessageRecipientsDraft(recipientsDraft);
+      }
+
+      function setAdminMessageSending(isSending) {
+        isAdminMessageSending = isSending;
+        adminMessageSendButton?.classList.toggle('is-loading', isSending);
+        adminMessageSendButton?.setAttribute('aria-busy', String(isSending));
+        updateAdminMessageRecipientState();
+      }
+
+      function enforceAdminMessageExclusiveSelection(source) {
+        if (source === 'all' && adminMessageAllRecipients?.checked) {
+          adminMessageRecipientsList?.querySelectorAll('[data-admin-message-recipient]').forEach((checkbox) => {
+            checkbox.checked = false;
+          });
+        }
+        if (source === 'individual' && adminMessageRecipientsList?.querySelector('[data-admin-message-recipient]:checked') && adminMessageAllRecipients) {
+          adminMessageAllRecipients.checked = false;
+        }
+      }
+
+      function setActiveAdminMessageVariableField(input) {
+        if (input === adminMessageTitleInput || input === adminMessageBodyInput) {
+          activeAdminMessageVariableField = input;
+        }
+      }
+
+      function getActiveAdminMessageVariableField() {
+        return activeAdminMessageVariableField === adminMessageTitleInput ? adminMessageTitleInput : adminMessageBodyInput;
+      }
+
+      function renderActiveAdminMessageVariableField(input) {
+        if (input === adminMessageTitleInput) {
+          renderAdminMessageTitle();
+          return;
+        }
+        renderAdminMessageBody();
+      }
+
+      function insertAdminMessageVariable(variable) {
+        const targetInput = getActiveAdminMessageVariableField();
+        if (!targetInput || !ADMIN_MESSAGE_VARIABLES.includes(variable)) {
+          return;
+        }
+        const { start, end } = getAdminMessageSelectionOffsets(targetInput);
+        const message = getAdminMessageEditorText(targetInput);
+        const maxLength = Number(targetInput.dataset.maxlength || 0);
+        const nextMessage = `${message.slice(0, start)}${variable}${message.slice(end)}`;
+        const normalizedMessage = maxLength > 0 ? nextMessage.slice(0, maxLength) : nextMessage;
+        const nextCursorPosition = Math.min(start + variable.length, normalizedMessage.length);
+        targetInput.focus();
+        renderAdminMessageEditor(targetInput, normalizedMessage, nextCursorPosition);
+        persistAdminMessageDraft();
+      }
+
+      function setAdminMessageRecipientsDropdownOpen(isOpen) {
+        if (!adminMessageRecipientsMenu || !adminMessageRecipientsToggle) {
+          return;
+        }
+        adminMessageRecipientsMenu.hidden = !isOpen;
+        adminMessageRecipientsToggle.setAttribute('aria-expanded', String(isOpen));
+        adminMessageRecipientsDropdown?.classList.toggle('is-open', isOpen);
+        if (!isOpen) {
+          updateAdminMessageRecipientSummary();
+        }
+      }
+
+      function renderAdminMessageRecipients() {
+        if (!adminMessageRecipientsList) {
+          return;
+        }
+        const selectedIds = new Set(getSelectedRecipientIds() || []);
+        const recipients = getSelectableMessageRecipients();
+        adminMessageRecipientsList.innerHTML = recipients.length
+          ? recipients.map((user) => {
+              const displayName = resolveDisplayName(user);
+              const email = cleanString(user.email);
+              return `
+                <label class="admin-message-recipient" for="adminMessageRecipient-${escapeHtml(user.id)}">
+                  <input
+                    id="adminMessageRecipient-${escapeHtml(user.id)}"
+                    type="checkbox"
+                    value="${escapeHtml(user.id)}"
+                    data-admin-message-recipient
+                    ${selectedIds.has(user.id) ? 'checked' : ''}
+                  />
+                  <span class="admin-message-recipient__text">
+                    <span class="admin-message-recipient__name">${escapeHtml(displayName)}</span>
+                    ${email ? `<span class="admin-message-recipient__email">${escapeHtml(email)}</span>` : ''}
+                  </span>
+                </label>
+              `;
+            }).join('')
+          : '<p class="admin-message-recipients__empty">Aucun utilisateur disponible.</p>';
+        updateAdminMessageRecipientState();
+      }
+
+      function openAdminMessageModal() {
+        if (!adminMessageModal) {
+          return;
+        }
+        adminMessageModal.hidden = false;
+        document.body.classList.add('admin-message-modal-open');
+        renderAdminMessageRecipients();
+        applyAdminMessageDraft();
+        updateAdminMessageRecipientState();
+        window.setTimeout(() => adminMessageTitleInput?.focus(), 0);
+      }
+
+      function closeAdminMessageModal(options = {}) {
+        if (!adminMessageModal) {
+          return;
+        }
+        if (options.reset !== false) {
+          adminMessageForm?.reset();
+          if (adminMessageAllRecipients) {
+            adminMessageAllRecipients.checked = true;
+          }
+          clearAdminMessageDraft();
+          renderAdminMessageTitle();
+          renderAdminMessageBody();
+          updateAdminMessageRecipientState();
+          setActiveAdminMessageVariableButton(null);
+        }
+        setAdminMessageRecipientsDropdownOpen(false);
+        adminMessageModal.hidden = true;
+        document.body.classList.remove('admin-message-modal-open');
+        adminMessageFab?.focus();
+      }
+
+      adminMessageFab?.addEventListener('click', openAdminMessageModal);
+
+      adminMessageModal?.querySelectorAll('[data-admin-message-close]').forEach((element) => {
+        element.addEventListener('click', () => closeAdminMessageModal());
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && adminMessageModal && !adminMessageModal.hidden) {
+          closeAdminMessageModal();
+        }
+      });
+
+      adminMessageRecipientsToggle?.addEventListener('click', () => {
+        const isOpen = adminMessageRecipientsToggle.getAttribute('aria-expanded') === 'true';
+        setAdminMessageRecipientsDropdownOpen(!isOpen);
+      });
+
+      document.addEventListener('click', (event) => {
+        if (adminMessageModal?.hidden) {
+          return;
+        }
+        if (adminMessageRecipientsDropdown && !adminMessageRecipientsDropdown.contains(event.target)) {
+          setAdminMessageRecipientsDropdownOpen(false);
+        }
+      });
+
+      adminMessageAllRecipients?.addEventListener('change', () => {
+        enforceAdminMessageExclusiveSelection('all');
+        updateAdminMessageRecipientState();
+        persistAdminMessageRecipientsDraft();
+      });
+      adminMessageRecipientsList?.addEventListener('change', (event) => {
+        if (event.target?.matches?.('[data-admin-message-recipient]')) {
+          enforceAdminMessageExclusiveSelection('individual');
+          updateAdminMessageRecipientState();
+          persistAdminMessageRecipientsDraft();
+        }
+      });
+      adminMessageTitleInput?.addEventListener('focus', () => setActiveAdminMessageVariableField(adminMessageTitleInput));
+      adminMessageBodyInput?.addEventListener('focus', () => setActiveAdminMessageVariableField(adminMessageBodyInput));
+      adminMessageTitleInput?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+        }
+      });
+      [adminMessageTitleInput, adminMessageBodyInput].forEach((editor) => {
+        editor?.addEventListener('paste', (event) => {
+          event.preventDefault();
+          const pastedText = event.clipboardData?.getData('text/plain') || '';
+          document.execCommand('insertText', false, pastedText);
+        });
+      });
+      adminMessageTitleInput?.addEventListener('input', () => {
+        normalizeAdminMessageEditor(adminMessageTitleInput);
+        persistAdminMessageDraft();
+      });
+      adminMessageBodyInput?.addEventListener('input', () => {
+        normalizeAdminMessageEditor(adminMessageBodyInput);
+        persistAdminMessageDraft();
+      });
+      adminMessageVariablesMenu?.addEventListener('mousedown', (event) => {
+        if (event.target?.closest?.('[data-admin-message-variable]')) {
+          event.preventDefault();
+        }
+      });
+      adminMessageVariablesMenu?.addEventListener('click', (event) => {
+        const variableButton = event.target?.closest?.('[data-admin-message-variable]');
+        if (!variableButton) {
+          return;
+        }
+        setActiveAdminMessageVariableButton(variableButton);
+        insertAdminMessageVariable(variableButton.getAttribute('data-admin-message-variable'));
+      });
+
+      adminMessageCancelButton?.addEventListener('click', () => {
+        closeAdminMessageModal();
+      });
+
+      adminMessageForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const title = cleanString(getAdminMessageEditorText(adminMessageTitleInput));
+        const body = cleanString(getAdminMessageEditorText(adminMessageBodyInput));
+        const selectedRecipientIds = getSelectedRecipientIds();
+        if (!title || !body) {
+          window.UiService?.showToast('Veuillez remplir le titre et le corps du message.');
+          return;
+        }
+        if (selectedRecipientIds && selectedRecipientIds.length === 0) {
+          updateAdminMessageRecipientState();
+          window.UiService?.showToast('Sélectionnez au moins un destinataire.');
+          return;
+        }
+
+        if (isAdminMessageSending) {
+          return;
+        }
+
+        setAdminMessageSending(true);
+
+        try {
+          const recipients = getAdminMessageTargetRecipients(selectedRecipientIds);
+          if (!recipients.length) {
+            updateAdminMessageRecipientState();
+            window.UiService?.showToast('Aucun destinataire disponible.');
+            return;
+          }
+          await Promise.all(recipients.map((recipient) => addDoc(collection(firebaseDb, 'adminMessages'), {
+            title: replaceVariables(title, recipient, currentPointsByUser),
+            body: replaceVariables(body, recipient, currentPointsByUser),
+            titleTemplate: title,
+            bodyTemplate: body,
+            recipientMode: 'selected',
+            recipientIds: [recipient.id],
+            createdAt: serverTimestamp(),
+          })));
+          if (adminMessageTitleInput) {
+            setAdminMessageEditorText(adminMessageTitleInput, '');
+          }
+          if (adminMessageBodyInput) {
+            setAdminMessageEditorText(adminMessageBodyInput, '');
+          }
+          clearAdminMessageDraft();
+          closeAdminMessageModal({ reset: false });
+          await window.StorageService?.recordCurrentUserActivity?.();
+          window.UiService?.showToast('Message envoyé aux utilisateurs.');
+        } catch (_error) {
+          window.UiService?.showToast('Impossible d’envoyer le message.');
+        } finally {
+          setAdminMessageSending(false);
+        }
+      });
+
+      const usersRef = collection(firebaseDb, 'users');
+      const outsRef = collection(firebaseDb, 'pages', 'page2', 'items');
+      onSnapshot(
+        usersRef,
+        (snapshot) => {
+          const users = snapshot.docs.map((entry) => ({ id: entry.id, ...(entry.data() || {}) }));
+          users.forEach(syncDefaults);
+          currentUsers = users;
+          renderCurrentUsers();
+          renderAdminMessageRecipients();
+        },
+        () => {
+          window.UiService?.showToast('Impossible de charger la liste des utilisateurs.');
+        },
+      );
+
+      onSnapshot(
+        outsRef,
+        (snapshot) => {
+          currentPointsByUser = snapshot.docs.reduce((pointsByUser, entry) => {
+            const data = entry.data() || {};
+            const creatorId = cleanString(data.createdBy || data.ownerId);
+            if (creatorId) {
+              pointsByUser[creatorId] = (pointsByUser[creatorId] || 0) + 1;
+            }
+            return pointsByUser;
+          }, {});
+          renderCurrentUsers();
+        },
+        () => {
+          window.UiService?.showToast('Impossible de charger les points utilisateurs.');
+        },
+      );
+    </script>
+
+  </body>
+</html>

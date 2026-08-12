@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Suivi Matériel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWix+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8A6NfA5RkXU4Q9z+7A8R2f2Y6xQfHXA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+  <body data-page="home" class="page1">
+    <div class="app-shell">
+      <header class="app-header app-header--home page1-header">
+        <div class="app-header__side app-header__side--left">
+          <div class="header-menu">
+            <button
+              id="homeMenuButton"
+              class="back-button header-action-btn menu-btn header-menu__trigger"
+              type="button"
+              aria-label="Plus d'options"
+              aria-haspopup="menu"
+              aria-expanded="false"
+            >
+              <img src="Icon/menu-burger.png" alt="" aria-hidden="true" class="header-menu__icon" />
+            </button>
+          </div>
+        </div>
+        <div class="app-header__center">
+          <div class="header-title">
+            <h1>Suivi Matériel</h1>
+          </div>
+        </div>
+        <div class="app-header__side app-header__side--right">
+          <button id="openLoginButton" class="header-login-button" type="button" hidden>Se connecter</button>
+          <button id="userAvatarButton" class="avatar-button header-action-btn avatar-btn" type="button" aria-label="Profil" hidden>
+            U
+          </button>
+        </div>
+        <div class="page1-search-filter-bar">
+          <label class="input-group">
+            <span class="sr-only">Recherche</span>
+            <span class="search-input__icon-wrap" aria-hidden="true">
+              <img src="Icon/Recherche.png" alt="" class="search-input__icon" />
+            </span>
+            <input id="searchInput" class="search-input" type="search" placeholder="Rechercher un site..." autocomplete="off" />
+          </label>
+        </div>
+      </header>
+
+      
+      <div id="homeMenuOverlay" class="home-menu-overlay sidebar-overlay" hidden></div>
+      <aside id="homeMenuPanel" class="header-menu__panel header-menu__drawer app-sidebar" role="menu" aria-label="Menu principal" hidden>
+        <div class="sidebar-header">
+          <div class="sidebar-header-text">
+            <h2>Menu</h2>
+            <p>Suivi Matériel</p>
+          </div>
+          <button id="homeMenuCloseButton" class="sidebar-close" type="button" aria-label="Fermer le menu">×</button>
+        </div>
+        <div class="sidebar-actions">
+          <button id="sidebarHistoryBtn" class="header-menu__option sidebar-item" type="button" role="menuitem" data-link="historiques.html">
+            <img src="Icon/Historique.png" alt="" aria-hidden="true" class="sidebar-item__icon" />
+            Historiques
+          </button>
+          <button id="sidebarAllMaterialsBtn" class="header-menu__option sidebar-item" type="button" role="menuitem" data-link="materiels.html">
+            <img src="Icon/Demande matériel.png" alt="" aria-hidden="true" class="sidebar-item__icon" />
+            Demande matériels
+          </button>
+          <button id="sidebarImportBtn" class="header-menu__option sidebar-item" type="button" role="menuitem">
+            <img src="Icon/Importer.png" alt="" aria-hidden="true" class="sidebar-item__icon" />
+            Importer les données
+          </button>
+          <button id="sidebarExportBtn" class="header-menu__option sidebar-item" type="button" role="menuitem">
+            <img src="Icon/Exporter.png" alt="" aria-hidden="true" class="sidebar-item__icon" />
+            Exporter les données
+          </button>
+          <button id="sidebarUsersBtn" class="header-menu__option sidebar-item" type="button" role="menuitem" data-link="users.html" hidden>
+            <img src="Icon/Admin.png" alt="" aria-hidden="true" class="sidebar-item__icon" />
+            Gestion des utilisateurs
+          </button>
+        </div>
+        <footer class="sidebar-footer" role="none">
+          <p class="sidebar-footer__title">Suivi matériel © 2026</p>
+          <p>Tous droits réservés</p>
+        </footer>
+      </aside>
+
+
+      <div id="googleWelcomeOverlay" class="google-welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="googleWelcomeTitle" aria-describedby="googleWelcomeMessage" hidden>
+        <section class="google-welcome-card" role="document">
+          <div id="googleWelcomeIcon" class="google-welcome-card__icon" aria-hidden="true">👋</div>
+          <h2 id="googleWelcomeTitle" class="google-welcome-card__title">👋 Heureux de vous revoir !</h2>
+          <div id="googleWelcomeMessage" class="google-welcome-card__message"></div>
+          <button id="googleWelcomeButton" class="google-welcome-card__button" type="button">OK</button>
+        </section>
+      </div>
+
+      <main class="page-content main-content">
+        <section class="auth-required-card section" data-auth-required-card hidden>
+          <span class="auth-required-card__icon" aria-hidden="true">i</span>
+          <p class="auth-required-card__message">Vous devez vous connecter pour modifier les données.</p>
+          <button type="button" class="auth-required-card__action" data-auth-login-action>
+            <span>Se connecter</span>
+            <span aria-hidden="true">›</span>
+          </button>
+        </section>
+
+        <section class="section-heading section-heading--saved">
+          <div class="saved-sites-label">
+            <h2><span id="siteCountLabel" class="site-label">Nombre total des sites :</span> <span id="siteCount" class="site-count" aria-label="Nombre de sites enregistrés">0</span></h2>
+          </div>
+        </section>
+
+        <section id="siteList" class="list-grid" aria-live="polite"></section>
+      </main>
+
+
+      <button id="openCreateSite" class="fab" type="button" aria-label="Créer un site">+</button>
+
+      <dialog id="siteDialog" class="modal-card">
+        <form class="modal-content modal-content--site-create" id="siteForm">
+          <div class="modal-header">
+            <h2>Entrer nom du site</h2>
+          </div>
+          <label class="input-group input-group--site-create">
+            <span>Nom du site <span class="required-star" aria-hidden="true">*</span></span>
+            <input id="siteNameInput" name="siteName" type="text" maxlength="25" />
+            <div class="site-input-feedback-row">
+              <p id="siteFormError" class="form-error" aria-live="polite"></p>
+              <span id="siteNameCounter" class="input-char-counter" aria-live="polite">0 / 0</span>
+            </div>
+          </label>
+          <div class="modal-actions modal-actions--split modal-actions--site-create">
+            <button type="button" class="btn btn-neutral" data-close-dialog>Annuler</button>
+            <button id="siteCreateSubmitButton" type="submit" class="btn btn-success">
+              <span class="btn-label-default">Créer</span>
+              <span class="btn-loading-spinner" aria-hidden="true"></span>
+              <span class="btn-label-loading" aria-hidden="true">Création...</span>
+            </button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="siteEditNameDialog" class="modal-card">
+        <form class="modal-content modal-content--site-create" id="siteEditNameForm">
+          <div class="modal-header">
+            <h2>Modifier le nom du site</h2>
+          </div>
+          <label class="input-group input-group--site-create">
+            <span>Nom du site</span>
+            <input id="siteEditNameInput" name="siteEditName" type="text" maxlength="25" />
+            <div class="site-input-feedback-row">
+              <p id="siteEditNameError" class="form-error" aria-live="polite"></p>
+              <span id="siteEditNameCounter" class="input-char-counter" aria-live="polite">0 / 25</span>
+            </div>
+          </label>
+          <div class="modal-actions modal-actions--split modal-actions--site-create">
+            <button type="button" class="btn btn-neutral" data-close-dialog>Annuler</button>
+            <button id="siteEditNameSubmitButton" type="submit" class="btn btn-success">Enregistrer</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="siteLockDialog" class="modal-card">
+        <form class="modal-content" id="siteLockForm">
+          <div class="modal-header">
+            <h2>Créer un mot de passe</h2>
+          </div>
+          <label class="input-group input-group--site-lock-create">
+            <span>Entrer un mot de passe</span>
+            <div class="password-wrap password-wrap--site-lock">
+              <input id="siteLockPasswordInput" type="text" autocomplete="new-password" />
+            </div>
+            <div id="siteLockStrengthIndicator" class="password-strength" hidden>
+              <div class="password-strength__track" aria-hidden="true">
+                <span id="siteLockStrengthBar" class="password-strength__bar"></span>
+              </div>
+              <p id="siteLockStrengthLabel" class="password-strength__text">Mot de passe faible</p>
+            </div>
+            <p id="siteLockPasswordError" class="form-error form-error--field" aria-live="polite"></p>
+          </label>
+          <label class="input-group input-group--site-lock-create">
+            <span>Confirmer</span>
+            <div class="password-wrap password-wrap--site-lock">
+              <input id="siteLockConfirmPasswordInput" type="text" autocomplete="new-password" />
+            </div>
+            <p id="siteLockConfirmPasswordError" class="form-error form-error--field" aria-live="polite"></p>
+          </label>
+          <div class="modal-actions modal-actions--password">
+            <button type="button" class="btn" data-close-dialog>Annuler</button>
+            <button type="submit" class="btn btn-success">Enregistrer</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="siteLockManageDialog" class="modal-card">
+        <form class="modal-content" id="siteLockManageForm">
+          <div class="modal-header">
+            <h2>Gestion de l’accès sécurisé</h2>
+          </div>
+          <p class="modal-helper-text">Ce site est actuellement protégé par un mot de passe.</p>
+          <label class="input-group input-group--site-lock-manage">
+            <span>Mot de passe actuel</span>
+            <div class="password-wrap password-wrap--site-lock-manage">
+              <input id="siteLockCurrentPasswordInput" type="password" autocomplete="current-password" />
+              <button
+                id="siteLockCurrentPasswordToggle"
+                class="password-toggle password-toggle--site-lock-manage"
+                type="button"
+                aria-label="Afficher le mot de passe"
+              >
+                <img src="Icon/Eye_OFF.png" alt="Afficher/Cacher le mot de passe" />
+              </button>
+            </div>
+            <p id="siteLockManageAttemptsInfo" class="form-info form-info--attempts" aria-live="polite" hidden></p>
+            <p id="siteLockCurrentPasswordError" class="form-error form-error--field" aria-live="polite"></p>
+          </label>
+          <label class="input-group input-group--site-lock-manage">
+            <span>Nouveau mot de passe</span>
+            <div class="password-wrap password-wrap--site-lock-manage">
+              <input id="siteLockNewPasswordInput" type="password" autocomplete="new-password" />
+              <button
+                id="siteLockNewPasswordToggle"
+                class="password-toggle password-toggle--site-lock-manage"
+                type="button"
+                aria-label="Afficher le mot de passe"
+              >
+                <img src="Icon/Eye_OFF.png" alt="Afficher/Cacher le mot de passe" />
+              </button>
+            </div>
+            <p id="siteLockNewPasswordError" class="form-error form-error--field" aria-live="polite"></p>
+          </label>
+          <div class="modal-actions modal-actions--password modal-actions--password-manage">
+            <div class="modal-actions__row modal-actions__row--pair">
+              <button type="button" class="btn" data-close-dialog>Annuler</button>
+              <button id="siteLockManageUpdateButton" type="submit" class="btn btn-success" data-lock-manage-action="update">
+                <span class="btn-label-default">Mettre à jour</span>
+                <span class="btn-loading-spinner" aria-hidden="true"></span>
+                <span class="btn-label-loading" aria-hidden="true">Mise à jour...</span>
+              </button>
+            </div>
+            <div class="modal-actions__row modal-actions__row--single">
+              <button id="siteLockManageUnlockButton" type="submit" class="btn btn-danger" data-lock-manage-action="unlock">
+                <span class="btn-label-default">Déverrouiller</span>
+                <span class="btn-loading-spinner" aria-hidden="true"></span>
+                <span class="btn-label-loading" aria-hidden="true">Déverrouillage...</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="siteLockStatusDialog" class="modal-card">
+        <div class="modal-content modal-content--site-lock-status">
+          <div class="modal-header modal-header--site-lock-status">
+            <h2>Statut du site</h2>
+          </div>
+          <div id="siteLockStatusMessage" class="site-lock-status-message" aria-live="polite"></div>
+          <div class="modal-actions modal-actions--split">
+            <button id="siteLockStatusCloseButton" type="button" class="btn" data-close-dialog>Fermer</button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog id="siteUnlockDialog" class="modal-card">
+        <form class="modal-content" id="siteUnlockForm">
+          <div class="modal-header">
+            <h2>Site protégé par un mot de passe</h2>
+          </div>
+          <label class="input-group input-group--site-unlock">
+            <span>Mot de passe</span>
+            <div class="password-wrap password-wrap--site-unlock">
+              <input id="siteUnlockPasswordInput" type="password" autocomplete="current-password" />
+              <button
+                id="siteUnlockPasswordToggle"
+                class="password-toggle password-toggle--site-unlock"
+                type="button"
+                aria-label="Afficher le mot de passe"
+              >
+                <img src="Icon/Eye_OFF.png" alt="Afficher/Cacher le mot de passe" />
+              </button>
+            </div>
+            <p id="siteUnlockAttemptsInfo" class="form-info form-info--attempts" aria-live="polite"></p>
+            <p id="siteUnlockError" class="form-error form-error--field" aria-live="assertive"></p>
+          </label>
+          <div class="modal-actions modal-actions--split modal-actions--password">
+            <button type="button" class="btn" data-close-dialog>Annuler</button>
+            <button id="siteUnlockSubmitButton" type="submit" class="btn btn-success">
+              <span class="btn-label-default">Valider</span>
+              <span class="btn-loading-spinner" aria-hidden="true"></span>
+              <span class="btn-label-loading" aria-hidden="true">Validation...</span>
+            </button>
+          </div>
+        </form>
+      </dialog>
+
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </div>
+ 
+    <script type="module" src="js/maintenance-banner.js"></script>
+    <script type="module" src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script type="module" src="js/app.js"></script>
+
+  </body>
+</html>

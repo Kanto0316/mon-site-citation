@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Achat matériel(s) - Suivi Matériel</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body data-page="purchase-detail" class="page2 purchase-detail-page">
+    <div class="app-shell">
+      <header class="app-header app-header--detail page2-header purchase-detail-header">
+        <div class="app-header__side app-header__side--left">
+          <button class="back-button back-btn" type="button" id="purchaseDetailBackButton" aria-label="Retour">
+            <img src="Icon/btn-retour.png" alt="retour" class="btn-retour" />
+          </button>
+        </div>
+        <div class="app-header__center page2-header-center">
+          <h1 id="purchaseDetailTitle" class="page2-title">Achat matériel(s)</h1>
+        </div>
+        <div class="app-header__side app-header__side--right" aria-hidden="true"></div>
+      </header>
+
+      <main class="page-content main-content purchase-detail-content">
+        <section id="purchaseDetailSummary" class="surface-card section purchase-detail-summary" aria-live="polite">
+          <div class="purchase-detail-summary__media" aria-hidden="true">
+            <img src="Icon/Image.png" alt="" aria-hidden="true" />
+          </div>
+          <div class="purchase-detail-summary__body">
+            <h2 class="section-title purchase-detail-summary__title"><input id="purchaseDetailName" class="purchase-inline-field" type="text" value="Chargement..." readonly /></h2>
+            <span id="purchaseDetailSaveSpinner" class="btn-loading-spinner purchase-detail-save-spinner" aria-hidden="true"></span>
+            <p id="purchaseDetailCreatedAt" class="purchase-detail-summary__date">Date non définie</p>
+          </div>
+        </section>
+
+        <section id="purchaseDetailMain" class="purchase-detail-main" aria-live="polite">
+          <div class="purchase-detail-image-wrap">
+            <div class="purchase-detail-image-frame">
+              <button id="purchaseDetailImageButton" class="purchase-detail-image-button" type="button" aria-label="Afficher l’image en grand" hidden>
+                <img id="purchaseDetailImage" class="purchase-detail-image" alt="Photo achat matériel" />
+              </button>
+              <img id="purchaseDetailImagePlaceholder" class="purchase-detail-image purchase-detail-image--placeholder" src="Icon/Image.png" alt="" aria-hidden="true" />
+              <button id="purchaseDetailImageEditButton" class="purchase-detail-image-edit fab" type="button" aria-label="Modifier l’image" hidden>✏️</button>
+              <input id="purchaseDetailImageInput" class="purchase-detail-image-input" type="file" accept="image/*" hidden />
+            </div>
+          </div>
+
+          <article class="surface-card section purchase-detail-info-card" aria-label="Informations achat matériel">
+            <div class="purchase-info-row" role="listitem">
+              <div class="purchase-label"><img src="Icon/Article.png" alt="" aria-hidden="true" class="icon" /><span>Quantité :</span></div>
+              <div class="purchase-value purchase-value--inline"><input id="purchaseDetailQty" class="purchase-inline-field" type="text" value="-" readonly /></div>
+            </div>
+            <div class="purchase-info-row" role="listitem">
+              <div class="purchase-label"><img src="Icon/Shop.png" alt="" aria-hidden="true" class="icon" /><span>Magasin :</span></div>
+              <div class="purchase-value purchase-value--inline"><input id="purchaseDetailStore" class="purchase-inline-field" type="text" value="-" readonly /></div>
+            </div>
+            <div id="purchaseDetailRemarkRow" class="purchase-info-row" role="listitem" hidden>
+              <div class="purchase-label"><img src="Icon/Remarque.png" alt="" aria-hidden="true" class="icon" /><span>Remarque :</span></div>
+              <div class="purchase-value purchase-value--inline"><textarea id="purchaseDetailRemark" class="purchase-inline-field purchase-inline-field--textarea" rows="1" readonly></textarea></div>
+            </div>
+            <div class="purchase-info-row" role="listitem">
+              <div class="purchase-label"><img src="Icon/Utilisateur.png" alt="" aria-hidden="true" class="icon" /><span>Créé par :</span></div>
+              <div id="purchaseDetailUser" class="purchase-value">Utilisateur</div>
+            </div>
+            <div class="purchase-info-row" role="listitem">
+              <div class="purchase-label"><img src="Icon/Date et Heure.png" alt="" aria-hidden="true" class="icon" /><span>Date :</span></div>
+              <div id="purchaseDetailFullDate" class="purchase-value">Date non définie</div>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="purchaseImageDialog" class="modal-card purchase-image-dialog">
+      <button id="purchaseImageDialogClose" class="purchase-image-dialog__close" type="button" aria-label="Fermer">×</button>
+      <img id="purchaseImageDialogImage" class="purchase-image-dialog__image" alt="Photo achat matériel en grand" />
+    </dialog>
+
+    <script type="module" src="js/storage.js"></script>
+    <script type="module" src="js/ui.js"></script>
+    <script type="module" src="js/firebase-core.js"></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/maintenance-banner.js"></script>
+  </body>
+</html>
