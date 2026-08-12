@@ -31,8 +31,12 @@ const DUPLICATE_KEYS = { sites:[['nom']], outs:[['siteId','numero']], out_articl
 
 
 function usage(msg) { if (msg) console.error(`Erreur: ${msg}`); console.error('Usage: node migration/firebase-to-supabase.js <export.su> [--dry-run] [--verbose] [--output <path>]'); process.exit(msg ? 1 : 0); }
-function parseArgs(argv) { const args={dryRun:true,verbose:false,output:path.join('migration','reports'),source:null}; for(let i=2;i<argv.length;i++){ const a=argv[i]; if(a==='--dry-run') args.dryRun=true; else if(a==='--verbose') args.verbose=true; else if(a==='--execute') usage('--execute est désactivé pour cette étape: DRY-RUN uniquement, 0 écriture.'); else if(a==='--output') args.output=argv[++i]||usage('--output requiert un chemin'); else if(a.startsWith('--')) usage(`option inconnue ${a}`); else if(!args.source) args.source=a; else usage(`argument inattendu ${a}`);} if(!args.source) usage('fichier export .su requis'); return args; }
-function readSchema(){ const p=path.join(process.cwd(),'supabase','schema.sql'); return fs.existsSync(p)?fs.readFileSync(p,'utf8'):''; }
+function parseArgs(argv) { const args={dryRun:true,verbose:false,output:null,source:null}; for(let i=2;i<argv.length;i++){ const a=argv[i]; if(a==='--dry-run') args.dryRun=true; else if(a==='--verbose') args.verbose=true; else if(a==='--execute') usage('--execute est désactivé pour cette étape: DRY-RUN uniquement, 0 écriture.'); else if(a==='--output') args.output=argv[++i]||usage('--output requiert un chemin'); else if(a.startsWith('--')) usage(`option inconnue ${a}`); else if(!args.source) args.source=a; else usage(`argument inattendu ${a}`);} if(!args.source) usage('fichier export .su requis'); return args; }
+const REPOSITORY_ROOT = path.resolve(__dirname, '..');
+const DEFAULT_REPORT_DIRECTORY = path.join(REPOSITORY_ROOT, 'migration', 'reports');
+function resolveFromRepository(inputPath){ return path.isAbsolute(inputPath) ? inputPath : path.resolve(REPOSITORY_ROOT, inputPath); }
+function displayFromRepository(inputPath){ const relative=path.relative(REPOSITORY_ROOT,inputPath); return relative && !relative.startsWith('..') && !path.isAbsolute(relative) ? relative.split(path.sep).join('/') : inputPath; }
+function readSchema(){ const p=path.join(REPOSITORY_ROOT,'supabase','schema.sql'); return fs.existsSync(p)?fs.readFileSync(p,'utf8'):''; }
 function parseExport(file){ const raw=fs.readFileSync(file,'utf8'); const trimmed=raw.replace(/^\uFEFF/,'').trim(); const attempts=[()=>JSON.parse(trimmed),()=>JSON.parse(trimmed.replace(/^export\s+default\s+/,'').replace(/;$/,''))]; for(const fn of attempts){ try{return fn();}catch{} } const lines=trimmed.split(/\r?\n/).filter(Boolean); const docs=[]; let ok=0; for(const line of lines){ try{docs.push(JSON.parse(line)); ok++;}catch{} } if(ok && ok===lines.length) return docs; throw new Error('Format .su non reconnu: JSON objet/tableau ou JSONL attendu. Parser à adapter après inspection de la structure réelle.'); }
 function stableUuid(ns, id){ return crypto.createHash('sha1').update(`${ns}:${id}`).digest('hex').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12}).*$/,'$1-$2-4$3-a$4-$5'); }
 function doc(id,data,pathParts){ const parts=Array.isArray(pathParts)?pathParts:String(pathParts||'').split('/').filter(Boolean); return { firebase_id:String(id), path:parts, data:data&&typeof data==='object'?data:{value:data}, target:null, mapped:{firebase_id:String(id)}, unmapped:[]};}
@@ -58,7 +62,7 @@ function extractDocs(root){ if(Array.isArray(root)) return root.map((x,i)=>doc(x
 function classify(d){ const p=d.path; if(p.join('/')==='appSettings/maintenance'||p[0]==='appSettings') return 'app_settings'; if(p[0]==='users'&&p[2]==='outDeletionLimits') return 'out_deletion_limits'; if(p[0]==='users'&&p.length===2) return 'users'; if(p.join('/').startsWith('pages/page1/items/')) return 'sites'; if(p.join('/').startsWith('pages/page2/items/')) return 'outs'; if(p.join('/').startsWith('pages/page3/items/')) return 'out_articles'; if(p[0]==='historiques') return 'historiques'; if(p[0]==='adminMessages') return 'messages'; if(p[0]==='sites'&&p[2]==='achatsMateriels') return 'achats'; if(p[0]==='materialRequests') return 'material_requests'; return null; }
 function normalizeDate(value){ if(value==null||value==='') return {value:null,kind:'null'}; if(value instanceof Date) return {value:value.toISOString(),kind:'date'}; if(typeof value==='string'){ const d=new Date(value); return Number.isNaN(d.getTime())?{value:null,kind:'invalid'}:{value:d.toISOString(),kind:'iso'}; } if(typeof value==='number'){ const d=new Date(value > 1e12 ? value : value*1000); return Number.isNaN(d.getTime())?{value:null,kind:'invalid'}:{value:d.toISOString(),kind:'number'}; } if(typeof value==='object'){ const s=value.seconds ?? value._seconds; const ns=value.nanoseconds ?? value._nanoseconds ?? 0; if(Number.isFinite(Number(s))) return {value:new Date(Number(s)*1000+Math.floor(Number(ns)/1e6)).toISOString(),kind:'firestore'}; } return {value:null,kind:'invalid'}; }
 function addIssue(report, section, issue){ report[section].push(issue); }
-function main(){ const args=parseArgs(process.argv); const before=fs.statSync(args.source).mtimeMs; readSchema(); const docs=extractDocs(parseExport(args.source)); const report={generated_at:new Date().toISOString(),mode:'DRY-RUN',source:path.resolve(args.source),summary:{},relation_checks:{valid:0,invalid:0,missing:0,details:[]},orphan_data:[],duplicates:[],owner_mismatch:[],invalid_dates:[],missing_required_fields:[],invalid_types:[],unmapped_fields:[],sensitive_fields_detected:[],migration_estimate:{},safety:{supabase_writes:0, firebase_writes:0, dry_run_only:true}};
+function main(){ const args=parseArgs(process.argv); const sourcePath=resolveFromRepository(args.source); const outputDirectory=args.output ? resolveFromRepository(args.output) : DEFAULT_REPORT_DIRECTORY; const jsonReportPath=path.join(outputDirectory,'dry-run-report.json'); const textReportPath=path.join(outputDirectory,'dry-run-report.txt'); const before=fs.statSync(sourcePath).mtimeMs; readSchema(); const docs=extractDocs(parseExport(sourcePath)); const report={mode:'DRY_RUN',source:sourcePath,generatedAt:new Date().toISOString(),summary:{users:0,sites:0,outs:0,articles:0,historiques:0,messages:0,achats:0},relations:{valid:0,invalid:0,orphans:0},anomalies:{duplicates:0,ownerMismatch:0,invalidDates:0,missingFields:0,unmappedFields:0},details:{orphans:[],duplicates:[],ownerMismatches:[],invalidDates:[],missingFields:[],unmappedFields:[]},writesPerformed:false,generated_at:null,relation_checks:{valid:0,invalid:0,missing:0,details:[]},orphan_data:[],duplicates:[],owner_mismatch:[],invalid_dates:[],missing_required_fields:[],invalid_types:[],unmapped_fields:[],sensitive_fields_detected:[],migration_estimate:{},safety:{supabase_writes:0, firebase_writes:0, source_writes:0, dry_run_only:true}}; report.generated_at=report.generatedAt;
  const entities=Object.fromEntries(MIGRATION_ORDER.map(k=>[k,[]]));
  for(const d of docs){ const t=classify(d); if(!t){ addIssue(report,'unmapped_fields',{type:'UNMAPPED_COLLECTION',firebase_id:d.firebase_id,path:d.path}); continue;} d.target=t; entities[t].push(d); if(t==='messages' && (d.data.recipientId||d.data.recipientEmail||d.data.recipientName)){ { const rd=doc(`${d.firebase_id}:recipient`, {messageId:d.firebase_id, recipientId:d.data.recipientId, recipientName:d.data.recipientName, recipientEmail:d.data.recipientEmail, createdAt:d.data.createdAt}, d.path.concat('_recipient')); rd.target='message_recipients'; entities.message_recipients.push(rd); } }}
  const ids={users:new Map(),sites:new Map(),outs:new Map(),out_articles:new Map(),messages:new Map(),material_requests:new Map()}; for(const k of Object.keys(ids)) for(const e of entities[k]) ids[k].set(e.firebase_id, stableUuid(k,e.firebase_id));
@@ -75,8 +79,92 @@ function main(){ const args=parseArgs(process.argv); const before=fs.statSync(ar
  for(const k of MIGRATION_ORDER){ const seen=new Set(); for(const e of entities[k]){ if(seen.has(e.firebase_id)) addIssue(report,'duplicates',{type:'DUPLICATE_CANDIDATE',entity:k,firebase_id:e.firebase_id,reason:'ID Firebase dupliqué'}); seen.add(e.firebase_id); for(const f of (REQUIRED_FIELDS[k]||[])){ if(e.data[f] === undefined || e.data[f] === null || e.data[f] === '') addIssue(report,'missing_required_fields',{type:'MISSING_REQUIRED_FIELD',entity:k,firebase_id:e.firebase_id,field:f}); } } }
  for(const [entity, keySets] of Object.entries(DUPLICATE_KEYS)){ for(const fields of keySets){ const seenKey=new Map(); for(const e of entities[entity]){ const key=fields.map(f=>String(e.data[f]??'').trim().toLowerCase()).join('||'); if(key.replace(/\|/g,'')){ if(seenKey.has(key)) addIssue(report,'duplicates',{type:'DUPLICATE_CANDIDATE',entity,firebase_id:e.firebase_id,fields,reason:`Même clé métier que ${seenKey.get(key)}`}); else seenKey.set(key,e.firebase_id); } } } }
  const emailSeen=new Map(); for(const u of entities.users){ const email=String(u.data.email||'').toLowerCase(); if(email){ if(emailSeen.has(email)) addIssue(report,'duplicates',{type:'DUPLICATE_CANDIDATE',entity:'users',firebase_id:u.firebase_id,field:'email',reason:`Email déjà présent sur ${emailSeen.get(email)}`}); else emailSeen.set(email,u.firebase_id);} }
- for(const [k,list] of Object.entries(entities)){ report.summary[k]=list.length; const errors=[...report.orphan_data,...report.missing_required_fields,...report.invalid_types].filter(x=>x.entity===k).length; report.migration_estimate[k]={total:list.length,ready:Math.max(0,list.length-errors),errors}; }
- fs.mkdirSync(args.output,{recursive:true}); fs.writeFileSync(path.join(args.output,'dry-run-report.json'),JSON.stringify(report,null,2)); fs.writeFileSync(path.join(args.output,'dry-run-report.txt'),renderText(report)); if(fs.statSync(args.source).mtimeMs!==before) throw new Error('Protection dry-run: le fichier source a été modifié.'); printConsole(report,args); }
-function renderText(r){ return `SUMMARY\n${JSON.stringify(r.summary,null,2)}\n\nRELATION_CHECKS\n${JSON.stringify(r.relation_checks,null,2)}\n\nORPHAN_DATA\n${JSON.stringify(r.orphan_data,null,2)}\n\nDUPLICATES\n${JSON.stringify(r.duplicates,null,2)}\n\nOWNER_MISMATCH\n${JSON.stringify(r.owner_mismatch,null,2)}\n\nINVALID_DATES\n${JSON.stringify(r.invalid_dates,null,2)}\n\nMISSING_REQUIRED_FIELDS\n${JSON.stringify(r.missing_required_fields,null,2)}\n\nUNMAPPED_FIELDS\n${JSON.stringify(r.unmapped_fields,null,2)}\n\nSENSITIVE_FIELDS_DETECTED\n${JSON.stringify(r.sensitive_fields_detected,null,2)}\n\nMIGRATION_ESTIMATE\n${JSON.stringify(r.migration_estimate,null,2)}\n\nDRY-RUN ONLY: 0 écriture effectuée dans Supabase.\n`; }
-function printConsole(r,args){ const anomalies=r.duplicates.length+r.owner_mismatch.length+r.invalid_dates.length+r.missing_required_fields.length+r.unmapped_fields.length; console.log(`========================================\n FIREBASE → SUPABASE DRY-RUN\n========================================\n\nSource :\n${path.basename(args.source)}\n\nUsers       : ${r.summary.users||0}\nSites       : ${r.summary.sites||0}\nOUT         : ${r.summary.outs||0}\nArticles    : ${r.summary.out_articles||0}\nHistorique  : ${r.summary.historiques||0}\nMessages    : ${r.summary.messages||0}\n\n----------------------------------------\n RELATIONS\n----------------------------------------\n\nValid       : ${r.relation_checks.valid}\nInvalid     : ${r.relation_checks.invalid}\nOrphans     : ${r.orphan_data.length}\n\n----------------------------------------\n ANOMALIES\n----------------------------------------\n\nDuplicates       : ${r.duplicates.length}\nOwner mismatch   : ${r.owner_mismatch.length}\nInvalid dates    : ${r.invalid_dates.length}\nMissing fields   : ${r.missing_required_fields.length}\nUnmapped fields  : ${r.unmapped_fields.length}\nSensitive fields : ${r.sensitive_fields_detected.length}\n\nRapports: ${path.join(args.output,'dry-run-report.json')} et dry-run-report.txt\n\nDRY-RUN ONLY\nAucune donnée n'a été écrite.\n========================================`); if(args.verbose && anomalies) console.log(JSON.stringify({orphan_data:r.orphan_data,duplicates:r.duplicates,owner_mismatch:r.owner_mismatch,invalid_dates:r.invalid_dates,unmapped_fields:r.unmapped_fields,sensitive_fields_detected:r.sensitive_fields_detected},null,2)); }
-main();
+ for(const [k,list] of Object.entries(entities)){ if(k==='out_articles') report.summary.articles=list.length; else if(Object.prototype.hasOwnProperty.call(report.summary,k)) report.summary[k]=list.length; const errors=[...report.orphan_data,...report.missing_required_fields,...report.invalid_types].filter(x=>x.entity===k).length; report.migration_estimate[k]={total:list.length,ready:Math.max(0,list.length-errors),errors}; }
+ report.relations.valid=report.relation_checks.valid; report.relations.invalid=report.relation_checks.invalid; report.relations.orphans=report.orphan_data.length;
+ report.anomalies.duplicates=report.duplicates.length; report.anomalies.ownerMismatch=report.owner_mismatch.length; report.anomalies.invalidDates=report.invalid_dates.length; report.anomalies.missingFields=report.missing_required_fields.length; report.anomalies.unmappedFields=report.unmapped_fields.length;
+ report.details.orphans=report.orphan_data; report.details.duplicates=report.duplicates; report.details.ownerMismatches=report.owner_mismatch; report.details.invalidDates=report.invalid_dates; report.details.missingFields=report.missing_required_fields; report.details.unmappedFields=report.unmapped_fields;
+ fs.mkdirSync(outputDirectory,{recursive:true}); fs.writeFileSync(jsonReportPath,JSON.stringify(report,null,2)); fs.writeFileSync(textReportPath,renderText(report));
+ const writtenJson=fs.existsSync(jsonReportPath) && fs.statSync(jsonReportPath).size > 0; const writtenTxt=fs.existsSync(textReportPath) && fs.statSync(textReportPath).size > 0; if(!writtenJson || !writtenTxt) throw new Error(`Échec de génération des rapports: JSON=${writtenJson}, TXT=${writtenTxt}`);
+ if(fs.statSync(sourcePath).mtimeMs!==before) throw new Error('Protection dry-run: le fichier source a été modifié.'); printConsole(report,{...args,source:sourcePath,outputDirectory,jsonReportPath,textReportPath}); }
+function renderText(r){ return `========================================
+ FIREBASE → SUPABASE DRY-RUN
+========================================
+
+Source :
+${path.basename(r.source)}
+
+Date :
+${r.generatedAt}
+
+----------------------------------------
+ DONNÉES
+----------------------------------------
+
+Users       : ${r.summary.users}
+Sites       : ${r.summary.sites}
+OUT         : ${r.summary.outs}
+Articles    : ${r.summary.articles}
+Historique  : ${r.summary.historiques}
+Messages    : ${r.summary.messages}
+Achats      : ${r.summary.achats}
+
+----------------------------------------
+ RELATIONS
+----------------------------------------
+
+Relations valides     : ${r.relations.valid}
+Relations invalides   : ${r.relations.invalid}
+Données orphelines    : ${r.relations.orphans}
+
+----------------------------------------
+ ANOMALIES
+----------------------------------------
+
+Doublons potentiels   : ${r.anomalies.duplicates}
+Owner mismatch        : ${r.anomalies.ownerMismatch}
+Dates invalides       : ${r.anomalies.invalidDates}
+Champs manquants      : ${r.anomalies.missingFields}
+Champs non mappés     : ${r.anomalies.unmappedFields}
+
+----------------------------------------
+ SÉCURITÉ
+----------------------------------------
+
+Écriture Supabase : NON
+
+Modification Firebase : NON
+
+Modification du fichier source : NON
+
+----------------------------------------
+ DÉTAILS JSON INCLUS DANS dry-run-report.json
+----------------------------------------
+
+Orphelins              : ${r.details.orphans.length}
+Doublons               : ${r.details.duplicates.length}
+Owner mismatches       : ${r.details.ownerMismatches.length}
+Dates invalides        : ${r.details.invalidDates.length}
+Champs manquants       : ${r.details.missingFields.length}
+Champs non mappés      : ${r.details.unmappedFields.length}
+Champs sensibles       : ${r.sensitive_fields_detected.length}
+
+----------------------------------------
+ FIN DU DRY-RUN
+----------------------------------------
+
+0 écriture effectuée dans Supabase.
+`; }
+function printConsole(r,args){ const anomalies=r.duplicates.length+r.owner_mismatch.length+r.invalid_dates.length+r.missing_required_fields.length+r.unmapped_fields.length; const jsonDisplay=displayFromRepository(args.jsonReportPath); const textDisplay=displayFromRepository(args.textReportPath); console.log(`========================================
+ DRY-RUN TERMINÉ
+========================================
+
+Aucune donnée n'a été écrite dans Supabase.
+
+Rapport JSON :
+${jsonDisplay}
+
+Rapport TXT :
+${textDisplay}
+
+========================================`); if(args.verbose && anomalies) console.log(JSON.stringify({orphan_data:r.orphan_data,duplicates:r.duplicates,owner_mismatch:r.owner_mismatch,invalid_dates:r.invalid_dates,unmapped_fields:r.unmapped_fields,sensitive_fields_detected:r.sensitive_fields_detected},null,2)); }
+try { main(); } catch (error) { console.error(`Erreur génération dry-run: ${error.message}`); process.exit(1); }
