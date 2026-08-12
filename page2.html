@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Détail liste - Suivi Matériel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" />
+  </head>
+  <body data-page="site-detail" class="page2">
+    <div class="app-shell">
+      <header class="app-header app-header--detail page2-header">
+        <div class="app-header__side app-header__side--left">
+          <button class="back-button back-btn" type="button" data-back="index.html" aria-label="Retour"><img src="Icon/btn-retour.png" alt="retour" class="btn-retour" /></button>
+        </div>
+        <div class="app-header__center page2-header-center">
+          <h1 id="siteTitle" class="page2-title">Chargement...</h1>
+          <div id="itemCount" class="site-detail-subtitle outs-count page2-header-subtitle"><span class="outs-number">0</span><span class="outs-label">OUTS</span></div>
+        </div>
+        <div class="app-header__side app-header__side--right">
+          <button class="btn-export-header" type="button" id="headerExportBtn" aria-label="Exporter">
+            <img src="Icon/Exel.png" alt="" aria-hidden="true" />
+          </button>
+        </div>
+        <div class="page2-search-filter-bar">
+          <label class="input-group">
+              <span class="sr-only">Rechercher (OUT ou article)</span>
+              <span class="site-search-icon-wrap" aria-hidden="true"><img src="Icon/Recherche.png" alt="" class="site-search-icon" /></span>
+              <input
+                id="itemSearchInput"
+                class="search-input"
+                type="search"
+                placeholder="Rechercher (OUT ou article)"
+                autocomplete="off"
+              />
+          </label>
+          <div class="page2-filter-menu-wrap">
+              <button type="button" id="itemStatusFilterButton" class="page2-filter-button" aria-label="Filtrer les OUT par statut" aria-haspopup="true" aria-expanded="false" aria-controls="itemStatusFilterMenu">
+                <img src="Icon/filtre.png" alt="" aria-hidden="true" class="page2-filter-button__icon" />
+              </button>
+              <div id="itemStatusFilterMenu" class="page2-filter-menu" role="menu" hidden>
+                <button type="button" class="page2-filter-option is-active" data-item-status-filter="all" role="menuitemradio" aria-checked="true"><span class="page2-filter-option__label">Tous</span><span class="page2-filter-option__count">0</span></button>
+                <button type="button" class="page2-filter-option" data-item-status-filter="done" role="menuitemradio" aria-checked="false"><span class="page2-filter-option__label">Terminés</span><span class="page2-filter-option__count">0</span></button>
+                <button type="button" class="page2-filter-option" data-item-status-filter="todo" role="menuitemradio" aria-checked="false"><span class="page2-filter-option__label">En cours</span><span class="page2-filter-option__count">0</span></button>
+                <button type="button" class="page2-filter-option" data-item-status-filter="fix" role="menuitemradio" aria-checked="false"><span class="page2-filter-option__label">À corriger</span><span class="page2-filter-option__count">0</span></button>
+                <button type="button" class="page2-filter-option" data-item-status-filter="ko" role="menuitemradio" aria-checked="false"><span class="page2-filter-option__label">K.O</span><span class="page2-filter-option__count">0</span></button>
+              </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-content main-content">
+          <section class="search-panel search-panel--site surface-card section">
+          <section class="auth-required-card auth-required-card--embedded section" data-auth-required-card hidden>
+            <span class="auth-required-card__icon" aria-hidden="true">i</span>
+            <p class="auth-required-card__message">Vous devez vous connecter pour modifier les données.</p>
+            <button type="button" class="auth-required-card__action" data-auth-login-action>
+              <span>Se connecter</span>
+              <span aria-hidden="true">›</span>
+            </button>
+          </section>
+          <div class="filter-chip-group filter-chips-container filters" role="group" aria-label="Filtrer les résultats par date">
+            <button class="filter-chip" type="button" data-filter-chip="all">Tous</button>
+            <button class="filter-chip" type="button" data-filter-chip="today">Aujourd’hui</button>
+            <button class="filter-chip" type="button" data-filter-chip="yesterday">Hier</button>
+            <button class="filter-chip" type="button" data-filter-chip="lastMonth">Plus ancien</button>
+          </div>
+          <section id="itemProgressStatsCard" class="progress-stats-card" aria-live="polite" hidden>
+            <div id="itemProgressTotal" class="progress-total">Total • 0 OUTS</div>
+            <div class="progress-item">
+              <div class="progress-header">
+                <span>Terminés</span>
+                <span id="itemProgressDoneMeta">0 • 0%</span>
+              </div>
+              <div class="progress-track"><div id="itemProgressDoneFill" class="progress-fill completed" style="width: 0%;"></div></div>
+            </div>
+            <div class="progress-item">
+              <div class="progress-header">
+                <span>En cours</span>
+                <span id="itemProgressTodoMeta">0 • 0%</span>
+              </div>
+              <div class="progress-track"><div id="itemProgressTodoFill" class="progress-fill pending" style="width: 0%;"></div></div>
+            </div>
+            <div class="progress-item">
+              <div class="progress-header">
+                <span>À corriger</span>
+                <span id="itemProgressFixMeta">0 • 0%</span>
+              </div>
+              <div class="progress-track"><div id="itemProgressFixFill" class="progress-fill warning" style="width: 0%;"></div></div>
+            </div>
+            <div class="progress-item">
+              <div class="progress-header">
+                <span>K.O</span>
+                <span id="itemProgressKoMeta">0 • 0%</span>
+              </div>
+              <div class="progress-track"><div id="itemProgressKoFill" class="progress-fill ko" style="width: 0%;"></div></div>
+            </div>
+          </section>
+          <label class="sr-only" for="itemDateFilter">Filtrer les résultats par date</label>
+          <select id="itemDateFilter" class="visually-hidden-control" aria-label="Filtrer les résultats par date">
+            <option value="all">Tous</option>
+            <option value="today">Aujourd'hui</option>
+            <option value="yesterday">Hier</option>
+            <option value="lastMonth">Plus Ancien</option>
+          </select>
+          </section>
+
+        <section id="outsTabContent" class="tab-content active">
+          <section id="itemList" class="list-grid" aria-live="polite"></section>
+        </section>
+
+        <section id="purchasesTabContent" class="tab-content hidden">
+          <div id="purchasesEmptyState" class="empty-state hidden">
+            Aucun achat matériel disponible.
+          </div>
+          <div id="purchasesList" class="list-grid"></div>
+        </section>
+      </main>
+
+      <nav class="bottom-navigation" aria-label="Navigation des onglets">
+        <button class="bottom-nav-item active" data-tab="outs" type="button">
+          <span class="bottom-nav-label">OUT</span>
+        </button>
+
+        <button class="bottom-nav-item admin-only hidden" data-tab="purchases" type="button">
+          <span class="bottom-nav-label">Achat PDD</span>
+        </button>
+      </nav>
+
+      <div class="site-detail-fab-stack" aria-hidden="false">
+        <div class="site-detail-fab-row" data-fab-row="create">
+          <button id="openCreateItem" class="fab" type="button" aria-label="Ajouter un numéro OUT">+</button>
+        </div>
+      </div>
+
+      <dialog id="itemDialog" class="modal-card">
+        <form method="dialog" class="modal-content modal-content--site-create modal-content--item-create" id="itemForm" autocomplete="off">
+          <div class="modal-header">
+            <h2>Nouveau numéro OUT <span class="required-star" aria-hidden="true">*</span></h2>
+          </div>
+          <label class="input-group input-group--site-create input-group--item-create">
+            <span class="item-number-label">
+              <span class="item-number-label-text">Numéro OUT</span>
+              <span class="required-star" aria-hidden="true">*</span>
+            </span>
+            <input
+              id="itemNumberInput"
+              name="itemNumber"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              maxlength="10"
+              minlength="4"
+              placeholder="Exemple : 26050200"
+            />
+            <div class="item-input-feedback-row">
+              <p id="itemFormError" class="form-error" aria-live="polite"></p>
+              <span id="itemNumberCounter" class="input-char-counter" aria-live="polite">0 / 0</span>
+            </div>
+          </label>
+          <label class="input-group input-group--site-create input-group--item-create magasin-group">
+            <span class="magasin-label">Magasin <span class="required-star" aria-hidden="true">*</span></span>
+            <select id="itemStoreSelect" name="itemStore">
+              <option value="">-- Sélectionner --</option>
+              <option value="TIT I">TITAN I</option>
+              <option value="HANG 36">HANG 36</option>
+              <option value="Autre à préciser">Autre à préciser</option>
+            </select>
+            <p id="itemStoreError"
+               class="form-error form-error--field"
+               aria-live="polite"></p>
+          </label>
+          <label id="itemStoreOtherGroup" class="input-group input-group--site-create input-group--item-create" hidden>
+            <span>Préciser le magasin</span>
+            <input id="itemStoreOtherInput" name="itemStoreOther" type="text" placeholder=" " />
+          </label>
+          <div class="modal-actions modal-actions--split modal-actions--site-create modal-actions--item-create">
+            <button type="button" class="btn btn-neutral" data-close-dialog>Annuler</button>
+            <button id="itemCreateSubmitButton" type="submit" class="btn btn-success">
+              <span class="btn-label-default">Créer</span>
+              <span class="btn-loading-spinner" aria-hidden="true"></span>
+              <span class="btn-label-loading" aria-hidden="true">Création...</span>
+            </button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="siteExportDialog" class="modal-card">
+        <form method="dialog" class="modal-content modal-content--site-create" id="siteExportForm">
+          <div class="modal-header">
+            <h2>Exporter les données</h2>
+          </div>
+          <p class="modal-helper-text">Choisissez un nom de fichier avant l’export.</p>
+          <label class="input-group input-group--site-create">
+            <span>Nom du fichier</span>
+            <div class="typeahead">
+              <input id="siteExportFileNameInput" name="siteExportFileName" type="text" placeholder="Ex : export-materiel" autocomplete="off" />
+            </div>
+          </label>
+          <label class="input-group input-group--site-create">
+            <span>Filtrer les lignes</span>
+            <select id="siteExportLineFilterSelect" name="siteExportLineFilter">
+              <option value="all" selected>Tous</option>
+              <option value="todo">En cours</option>
+              <option value="fix">À corriger</option>
+              <option value="done">Terminés</option>
+              <option value="ko">K.O</option>
+            </select>
+          </label>
+          <p id="siteExportFileNameError" class="form-error" aria-live="polite"></p>
+          <div class="modal-actions modal-actions--split modal-actions--site-create">
+            <button type="button" id="siteExportCancelButton" class="btn btn-neutral">Annuler</button>
+            <button id="siteExportSubmitButton" type="submit" class="btn btn-success" disabled>
+              <span class="btn-label-default">Exporter</span>
+              <span class="btn-label-loading" aria-hidden="true">Exportation...</span>
+            </button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="purchaseModal" class="modal-card">
+        <form method="dialog" class="modal-content modal-content--site-create" id="purchaseForm">
+          <div class="modal-header">
+            <h2>Ajouter un achat matériel</h2>
+          </div>
+          <p class="modal-helper-text">Renseignez les informations de l’achat.</p>
+          <label class="input-group input-group--site-create input-group--item-create">
+            <span>Désignation <span class="required-star" aria-hidden="true">*</span></span>
+            <input id="purchaseDesignation" type="text" maxlength="25" placeholder="Ex : Câble cuivre" />
+            <div class="item-input-feedback-row">
+              <p id="purchaseDesignationError" class="form-error form-error--field" aria-live="polite"></p>
+              <span id="purchaseDesignationCounter" class="input-char-counter" aria-live="polite">0 / 25</span>
+            </div>
+          </label>
+          <div class="form-row purchase-form-row">
+            <label class="input-group input-group--site-create quantity-group">
+              <span>Quantité <span class="required-star" aria-hidden="true">*</span></span>
+              <input id="purchaseQty" type="number" min="1" max="9999" placeholder="Ex : 10" />
+              <p id="purchaseQtyError" class="form-error form-error--field" aria-live="polite"></p>
+            </label>
+            <label class="input-group input-group--site-create unit-group">
+              <span>Unité</span>
+              <select id="purchaseUnit">
+                <option value="Pcs">Pcs</option>
+                <option value="m">m</option>
+                <option value="Paquet">Paquet</option>
+              </select>
+              <p id="purchaseUnitError" class="form-error form-error--field" aria-live="polite"></p>
+            </label>
+          </div>
+          <label class="input-group input-group--site-create">
+            <span>Magasin</span>
+            <div class="typeahead" id="purchaseStoreTypeahead">
+              <input id="purchaseStore" type="text" placeholder="Ex : ABC" autocomplete="off" />
+              <div id="purchaseStoreSuggestions" class="typeahead__menu" role="listbox" aria-label="Suggestions de magasin" hidden></div>
+            </div>
+            <p class="form-error form-error--field" aria-hidden="true"></p>
+          </label>
+          <label class="input-group input-group--site-create">
+            <span>Remarque</span>
+            <textarea id="purchaseRemark" rows="2"></textarea>
+            <p id="purchaseRemarkError" class="form-error form-error--field" aria-live="polite"></p>
+          </label>
+          <label class="input-group input-group--site-create">
+            <span>Photo</span>
+            <input id="purchasePhotoInput" type="file" accept="image/*" />
+          </label>
+          <div id="purchasePhotoPreviewWrap" class="purchase-photo-preview hidden" aria-live="polite">
+            <img id="purchasePhotoPreview" alt="Aperçu de la photo sélectionnée" />
+          </div>
+          <p id="purchaseFormError" class="form-error" aria-live="polite"></p>
+          <div class="modal-actions modal-actions--split modal-actions--site-create">
+            <button id="cancelPurchaseBtn" class="btn btn-neutral" type="button">Annuler</button>
+            <button id="savePurchaseBtn" class="btn btn-success" type="submit">
+              <span class="btn-label-default">Enregistrer</span>
+              <span class="btn-loading-spinner" aria-hidden="true"></span>
+              <span class="btn-label-loading" aria-hidden="true">Enregistrement...</span>
+            </button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="editPurchaseModal" class="modal-card">
+        <form method="dialog" class="modal-content modal-content--site-create modal-content--item-create" id="editPurchaseForm">
+          <div class="modal-header">
+            <h2>Modifier l’achat matériel</h2>
+          </div>
+          <label class="input-group input-group--site-create input-group--item-create">
+            <span>Nom</span>
+            <input id="editPurchaseNameInput" type="text" maxlength="25" placeholder="Nom achat matériel" />
+            <div class="item-input-feedback-row">
+              <p id="editPurchaseFormError" class="form-error error-message" aria-live="polite"></p>
+              <span id="editPurchaseNameCounter" class="input-char-counter" aria-live="polite">0 / 25</span>
+            </div>
+          </label>
+          <label class="input-group input-group--site-create input-group--item-create">
+            <span>Remarque</span>
+            <textarea id="editPurchaseRemarkInput" rows="2" placeholder="Ex : Livraison urgente pour le chantier."></textarea>
+            <p id="editPurchaseRemarkError" class="form-error form-error--field" aria-live="polite"></p>
+          </label>
+          <div class="modal-actions modal-actions--split modal-actions--site-create modal-actions--item-create">
+            <button type="button" class="btn btn-neutral" id="cancelEditPurchaseBtn">Annuler</button>
+            <button type="submit" class="btn btn-success" id="saveEditPurchaseBtn">
+              <span class="btn-label-default">Enregistrer</span>
+              <span class="btn-loading-spinner" aria-hidden="true"></span>
+              <span class="btn-label-loading" aria-hidden="true">Enregistrement...</span>
+            </button>
+          </div>
+        </form>
+      </dialog>
+
+
+
+      <dialog id="editOutNameModal" class="modal-card">
+        <form method="dialog" class="modal-content modal-content--site-create modal-content--item-create" id="editOutNameForm">
+          <div class="modal-header">
+            <h2>Modifier le nom OUT</h2>
+          </div>
+          <label class="input-group input-group--site-create input-group--item-create">
+            <span>Nom</span>
+            <input id="editOutNameInput" type="text" maxlength="10" placeholder="Nom OUT" inputmode="numeric" pattern="[0-9]*" />
+            <div class="item-input-feedback-row">
+              <p id="editOutNameFormError" class="form-error error-message" aria-live="polite"></p>
+              <span id="editOutNameCounter" class="input-char-counter" aria-live="polite">0 / 10</span>
+            </div>
+          </label>
+          <div class="modal-actions modal-actions--split modal-actions--site-create modal-actions--item-create">
+            <button type="button" class="btn btn-neutral" id="cancelEditOutNameBtn">Annuler</button>
+            <button type="submit" class="btn btn-success" id="saveEditOutNameBtn">
+              <span class="btn-label-default">Enregistrer</span>
+              <span class="btn-loading-spinner" aria-hidden="true"></span>
+              <span class="btn-label-loading" aria-hidden="true">Enregistrement...</span>
+            </button>
+          </div>
+        </form>
+      </dialog>
+
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="js/maintenance-banner.js"></script>
+    <script type="module" src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script type="module" src="js/app.js"></script>
+
+  </body>
+</html>

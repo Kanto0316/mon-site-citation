@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Détail complet - Suivi Matériel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWix+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8A6NfA5RkXU4Q9z+7A8R2f2Y6xQfHXA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+  <body data-page="item-detail" class="page3">
+    <div class="app-shell app-shell--wide">
+      <header class="app-header app-header--detail">
+        <div class="app-header__side app-header__side--left">
+          <button class="back-button" type="button" id="itemBackButton" aria-label="Retour"><img src="Icon/btn-retour.png" alt="retour" class="btn-retour" /></button>
+        </div>
+        <div class="app-header__center">
+          <div class="header-title header-title--stacked">
+            <h1 id="itemTitle">Chargement...</h1>
+          </div>
+        </div>
+        <div class="app-header__side app-header__side--right" aria-hidden="true"></div>
+      </header>
+
+      <main class="page-content page-content--wide main-content">
+        <section class="surface-card table-card section">
+          <div class="section-heading section-heading--table">
+            <div class="header-top page3-summary-header">
+              <div class="title-block page3-title-block">
+                <h2 class="section-title">Tableau des données</h2>
+              </div>
+              <button type="button" id="exportDetailsButton" class="btn btn-success export-details-button btn-export">
+                <img src="Icon/Exel.png" alt="" class="export-details-button__icon" aria-hidden="true" />
+                <span>Exporter</span>
+              </button>
+            </div>
+          </div>
+          <div class="page3-sub-info">
+            <div id="detailCount" class="article-count page3-article-count">
+              <span class="count-number page3-count-number">0</span>
+              <span class="count-label page3-count-label">Articles</span>
+            </div>
+
+            <div id="detailStore" class="store-info magasin-block page3-info-row">Magasin : Non défini</div>
+          </div>
+          <div class="search-panel search-panel--inline page2-search-filter-bar">
+            <label class="input-group">
+              <span class="site-search-icon-wrap" aria-hidden="true">
+                <img src="Icon/Recherche.png" alt="" class="site-search-icon" />
+              </span>
+              <input id="detailSearchInput" class="search-input" type="text" placeholder="Recherche" autocomplete="off" />
+              <button id="clearSearchBtn" class="clear-search-btn" type="button" aria-label="Effacer la recherche">×</button>
+            </label>
+            <div class="page2-filter-menu-wrap page3-filter-menu-wrap">
+              <button type="button" id="detailFilterButton" class="page2-filter-button" aria-label="Filtrer le tableau" aria-haspopup="true" aria-expanded="false" aria-controls="detailFilterMenu">
+                <img src="Icon/filtre.png" alt="" aria-hidden="true" class="page2-filter-button__icon" />
+              </button>
+              <div id="detailFilterMenu" class="page3-filter-menu" role="menu" hidden>
+                <button type="button" class="page3-filter-option is-active" data-detail-filter="all" role="menuitemradio" aria-checked="true"><span class="page3-filter-option__label">Tous</span><span class="page3-filter-option__count">0</span></button>
+                <button type="button" class="page3-filter-option" data-detail-filter="done" role="menuitemradio" aria-checked="false"><span class="page3-filter-option__label">Terminés</span><span class="page3-filter-option__count">0</span></button>
+                <button type="button" class="page3-filter-option" data-detail-filter="todo" role="menuitemradio" aria-checked="false"><span class="page3-filter-option__label">En cours</span><span class="page3-filter-option__count">0</span></button>
+                <button type="button" class="page3-filter-option" data-detail-filter="fix" role="menuitemradio" aria-checked="false"><span class="page3-filter-option__label">À corriger</span><span class="page3-filter-option__count">0</span></button>
+                <button type="button" class="page3-filter-option" data-detail-filter="ko" role="menuitemradio" aria-checked="false"><span class="page3-filter-option__label">K.O</span><span class="page3-filter-option__count">0</span></button>
+              </div>
+            </div>
+          </div>
+          <section class="auth-required-card auth-required-card--embedded section" data-auth-required-card hidden>
+            <span class="auth-required-card__icon" aria-hidden="true">i</span>
+            <p class="auth-required-card__message">Vous devez vous connecter pour modifier les données.</p>
+            <button type="button" class="auth-required-card__action" data-auth-login-action>
+              <span>Se connecter</span>
+              <span aria-hidden="true">›</span>
+            </button>
+          </section>
+          <div class="table-container table-container--card" id="detailTableContainer">
+            <div class="table-wrapper table-wrapper--shared" id="detailTableWrapper">
+              <table class="data-table" id="detailDataTable">
+              <thead>
+                <tr>
+                  <th>#   </th>
+                  <th>Code</th>
+                  <th>Désignation</th>
+                  <th>Qté Sortie</th>
+                  <th>Unité</th>
+                  <th>Qté posée</th>
+                  <th>Qté Rebus</th>
+                  <th>Qté Retour</th>
+                  <th>Date de retour</th>
+                  <th>Ecart</th>
+                  <th>Remarque</th>
+                  <th>Statut</th>
+                  <th>Date de création</th>
+                  <th>Date de modification</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+                <tbody id="detailTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div class="item-detail-fab-row site-detail-fab-row" data-fab-row="create">
+  
+        <button type="button" id="openDetailFormButton" class="fab fab-add--item-detail" aria-label="Ajouter une donnée">+</button>
+      </div>
+
+      <dialog id="detailFormModal" class="modal-card detail-form-modal">
+        <div class="modal-content detail-form-modal__content">
+          <div class="modal-header">
+            <h2>Ajouter une donnée</h2>
+          </div>
+          <section id="detailFormSection" class="surface-card form-card section detail-form-modal__section">
+            <form id="detailForm" class="responsive-form" novalidate>
+              <label class="input-group">
+                <span>Code <span class="required-asterisk" aria-hidden="true">*</span></span>
+                <div class="typeahead" id="codeTypeahead">
+                  <input id="codeInput" name="code" type="text" maxlength="40" aria-label="Code" autocomplete="off" />
+                  <div id="codeSuggestions" class="typeahead__menu" role="listbox" aria-label="Suggestions de code" hidden></div>
+                </div>
+                <div class="detail-input-feedback-row">
+                  <p id="codeInputError" class="form-error detail-field-error" aria-live="polite"></p>
+                  <span id="codeInputCounter" class="input-char-counter" aria-live="polite">0 / 0</span>
+                </div>
+              </label>
+              <label class="input-group input-group--wide input-group--site-create">
+                <span>Désignation <span class="required-asterisk" aria-hidden="true">*</span></span>
+                <input id="designationInput" name="designation" type="text" maxlength="120" required />
+                <div class="detail-input-feedback-row">
+                  <p id="designationInputError" class="form-error detail-field-error" aria-live="polite"></p>
+                  <span id="designationInputCounter" class="input-char-counter" aria-live="polite">0 / 0</span>
+                </div>
+              </label>
+              <div class="detail-form-row detail-form-row--qte-unit">
+                <label class="input-group detail-form-field detail-form-field--qte">
+                  <span>Qté Sortie</span>
+                  <input id="qteSortieInput" name="qteSortie" type="text" inputmode="decimal" />
+                </label>
+                <label class="input-group detail-form-field detail-form-field--unit">
+                  <span>Unité</span>
+                  <select id="uniteInput" name="unite">
+                    <option value="m">m</option>
+                    <option value="Pcs">Pcs</option>
+                  </select>
+                </label>
+              </div>
+              <label class="input-group detail-form-field">
+                <span>Statut</span>
+                <select id="statutInput" name="statut">
+                  <option value="OK" selected>OK</option>
+                  <option value="K.O">K.O</option>
+                </select>
+              </label>
+              <div class="form-footer">
+                <p id="detailFormError" class="form-error" aria-live="polite"></p>
+                <div class="detail-form-actions">
+                  <button type="button" class="btn" id="cancelDetailFormButton">Annuler</button>
+                  <button type="submit" class="btn btn-success" id="detailCreateSubmitButton">
+                    <span class="btn-label-default">Enregistrer</span>
+                    <span class="btn-loading-spinner" aria-hidden="true"></span>
+                    <span class="btn-label-loading" aria-hidden="true">Enregistrement...</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </section>
+        </div>
+      </dialog>
+
+      <dialog id="detailExportDialog" class="modal-card">
+        <form method="dialog" class="modal-content modal-content--site-create" id="detailExportForm">
+          <div class="modal-header">
+            <h2>Exporter les données</h2>
+          </div>
+          <p class="modal-helper-text">Choisissez un nom de fichier avant l’export.</p>
+          <label class="input-group input-group--site-create">
+            <span>Nom du fichier</span>
+            <div class="typeahead">
+              <input id="detailExportFileNameInput" name="detailExportFileName" type="text" placeholder="Ex : export-materiel" autocomplete="off" />
+            </div>
+          </label>
+          <p id="detailExportFileNameError" class="form-error" aria-live="polite"></p>
+          <div class="modal-actions modal-actions--split modal-actions--site-create">
+            <button type="button" id="detailExportCancelButton" class="btn btn-neutral">Annuler</button>
+            <button id="detailExportSubmitButton" type="submit" class="btn btn-success" disabled>
+              <span class="btn-label-default">Exporter</span>
+              <span class="btn-label-loading" aria-hidden="true">Exportation...</span>
+            </button>
+          </div>
+        </form>
+      </dialog>
+
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="js/maintenance-banner.js"></script>
+    <script type="module" src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script type="module" src="js/app.js"></script>
+
+  </body>
+</html>
