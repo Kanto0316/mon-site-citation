@@ -1,6 +1,7 @@
 -- Phase 1: initial PostgreSQL schema for the Firebase -> Supabase migration.
 -- Source of truth: FIREBASE_TO_SUPABASE_AUDIT.md (repository audit).
--- Structure only: no RLS, policies, RPC, Realtime, data import, or business triggers.
+-- Structure only: RLS is enabled without policies; no RPC, Realtime, data import,
+-- or business triggers are defined in this phase.
 
 -- Required by gen_random_uuid(). CITEXT provides case-insensitive profile identifiers.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -331,3 +332,58 @@ CREATE TABLE public.message_reads (
 
 -- Migration note: automatic updated_at maintenance intentionally belongs in
 -- 002_functions.sql. This schema only supplies initial DEFAULT now() values.
+
+-- Structural indexes for foreign-key joins and the principal chronological reads.
+-- Primary-key and UNIQUE constraints already create their own backing indexes.
+CREATE INDEX profiles_created_at_idx ON public.profiles (created_at);
+CREATE INDEX app_settings_updated_by_idx ON public.app_settings (updated_by);
+CREATE INDEX sites_owner_id_idx ON public.sites (owner_id);
+CREATE INDEX sites_created_by_idx ON public.sites (created_by);
+CREATE INDEX sites_locked_by_idx ON public.sites (locked_by);
+CREATE INDEX sites_created_at_idx ON public.sites (created_at);
+CREATE INDEX outs_site_id_idx ON public.outs (site_id);
+CREATE INDEX outs_owner_id_idx ON public.outs (owner_id);
+CREATE INDEX outs_created_by_idx ON public.outs (created_by);
+CREATE INDEX outs_created_at_idx ON public.outs (created_at);
+CREATE INDEX articles_out_id_idx ON public.articles (out_id);
+CREATE INDEX articles_site_id_idx ON public.articles (site_id);
+CREATE INDEX articles_owner_id_idx ON public.articles (owner_id);
+CREATE INDEX articles_created_by_idx ON public.articles (created_by);
+CREATE INDEX article_returns_article_id_idx ON public.article_returns (article_id);
+CREATE INDEX article_returns_created_by_idx ON public.article_returns (created_by);
+CREATE INDEX purchases_site_id_idx ON public.purchases (site_id);
+CREATE INDEX purchases_created_by_idx ON public.purchases (created_by);
+CREATE INDEX purchases_created_at_idx ON public.purchases (created_at);
+CREATE INDEX history_events_actor_id_idx ON public.history_events (actor_id);
+CREATE INDEX history_events_site_id_idx ON public.history_events (site_id);
+CREATE INDEX history_events_created_at_idx ON public.history_events (created_at DESC);
+CREATE INDEX trash_entries_deleted_by_idx ON public.trash_entries (deleted_by);
+CREATE INDEX trash_entries_deleted_at_idx ON public.trash_entries (deleted_at DESC);
+CREATE INDEX trash_entries_expires_at_idx ON public.trash_entries (expires_at);
+CREATE INDEX material_requests_requester_id_idx ON public.material_requests (requester_id);
+CREATE INDEX material_requests_site_id_idx ON public.material_requests (site_id);
+CREATE INDEX material_requests_created_at_idx ON public.material_requests (created_at);
+CREATE INDEX material_request_items_request_id_idx ON public.material_request_items (request_id);
+CREATE INDEX admin_messages_created_by_idx ON public.admin_messages (created_by);
+CREATE INDEX admin_messages_created_at_idx ON public.admin_messages (created_at DESC);
+CREATE INDEX message_recipients_profile_id_idx ON public.message_recipients (profile_id);
+CREATE INDEX message_reads_profile_id_idx ON public.message_reads (profile_id);
+
+-- Phase 1 deliberately enables RLS without defining policies. Until the policy
+-- phase is applied, API roles subject to RLS have no implicit table access.
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.material_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.outs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.articles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.article_returns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.purchases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.history_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.trash_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.out_deletion_limits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.material_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.material_request_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.message_recipients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.message_reads ENABLE ROW LEVEL SECURITY;
