@@ -29,6 +29,10 @@ CREATE TRIGGER sites_set_updated_at
 BEFORE UPDATE ON public.sites
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
+CREATE TRIGGER site_unlock_protections_set_updated_at
+BEFORE UPDATE ON public.site_unlock_protections
+FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
 CREATE TRIGGER outs_set_updated_at
 BEFORE UPDATE ON public.outs
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
