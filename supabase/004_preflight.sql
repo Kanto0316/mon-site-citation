@@ -19,10 +19,10 @@ ORDER BY e.extension_name;
 -- ==================================================
 -- 02. TABLES
 -- ==================================================
--- EXPECTED RESULT: 16/16 tables, all with RLS enabled.
+-- EXPECTED RESULT: 17/17 tables, all with RLS enabled.
 WITH expected(table_name) AS (
   SELECT unnest(ARRAY[
-    'profiles','app_settings','material_codes','sites','outs','articles',
+    'profiles','app_settings','material_codes','sites','site_unlock_protections','outs','articles',
     'article_returns','purchases','history_events','trash_entries',
     'out_deletion_limits','material_requests','material_request_items',
     'admin_messages','message_recipients','message_reads'
@@ -42,7 +42,7 @@ ORDER BY e.table_name;
 
 WITH expected(table_name) AS (
   SELECT unnest(ARRAY[
-    'profiles','app_settings','material_codes','sites','outs','articles',
+    'profiles','app_settings','material_codes','sites','site_unlock_protections','outs','articles',
     'article_returns','purchases','history_events','trash_entries',
     'out_deletion_limits','material_requests','material_request_items',
     'admin_messages','message_recipients','message_reads'
@@ -53,9 +53,9 @@ WITH expected(table_name) AS (
   JOIN information_schema.tables t
     ON t.table_schema = 'public' AND t.table_name = e.table_name
 )
-SELECT 16 AS expected_tables,
+SELECT 17 AS expected_tables,
        count(f.table_name) AS found_tables,
-       16 - count(f.table_name) AS missing_tables
+       17 - count(f.table_name) AS missing_tables
 FROM found f;
 
 -- ==================================================
@@ -74,6 +74,12 @@ WITH expected(table_name, column_name) AS (
     ('profiles', 'avatar_url'),
     ('profiles', 'role'),
     ('profiles', 'legacy_role'),
+    ('profiles', 'legacy_status'),
+    ('profiles', 'legacy_approved'),
+    ('profiles', 'legacy_pending'),
+    ('profiles', 'presence'),
+    ('profiles', 'online'),
+    ('profiles', 'last_seen_at'),
     ('profiles', 'maintenance_authorized'),
     ('profiles', 'maintenance_access'),
     ('profiles', 'created_at'),
@@ -105,14 +111,24 @@ WITH expected(table_name, column_name) AS (
     ('sites', 'locked_at'),
     ('sites', 'locked_by'),
     ('sites', 'locked_by_name_snapshot'),
+    ('sites', 'unlocked_by'),
+    ('sites', 'unlocked_by_name_snapshot'),
     ('sites', 'unlock_attempts_remaining'),
     ('sites', 'unlock_blocked_until'),
     ('sites', 'inactive_since'),
     ('sites', 'inactivity_decision_pending'),
     ('sites', 'inactivity_decision_pending_at'),
     ('sites', 'inactivity_restored_at'),
+    ('sites', 'imported_at'),
     ('sites', 'created_at'),
     ('sites', 'updated_at'),
+    ('site_unlock_protections', 'id'),
+    ('site_unlock_protections', 'site_id'),
+    ('site_unlock_protections', 'profile_id'),
+    ('site_unlock_protections', 'attempts_remaining'),
+    ('site_unlock_protections', 'blocked_until'),
+    ('site_unlock_protections', 'created_at'),
+    ('site_unlock_protections', 'updated_at'),
     ('outs', 'id'),
     ('outs', 'firebase_id'),
     ('outs', 'site_id'),
@@ -124,6 +140,7 @@ WITH expected(table_name, column_name) AS (
     ('outs', 'article_count_legacy'),
     ('outs', 'created_by_name_snapshot'),
     ('outs', 'created_by_email_snapshot'),
+    ('outs', 'imported_at'),
     ('outs', 'created_at'),
     ('outs', 'updated_at'),
     ('articles', 'id'),
@@ -146,6 +163,7 @@ WITH expected(table_name, column_name) AS (
     ('articles', 'created_by'),
     ('articles', 'created_by_name_snapshot'),
     ('articles', 'created_by_email_snapshot'),
+    ('articles', 'imported_at'),
     ('articles', 'created_at'),
     ('articles', 'updated_at'),
     ('article_returns', 'id'),
@@ -171,6 +189,9 @@ WITH expected(table_name, column_name) AS (
     ('purchases', 'created_by'),
     ('purchases', 'created_by_name_snapshot'),
     ('purchases', 'created_by_email_snapshot'),
+    ('purchases', 'site_name_snapshot'),
+    ('purchases', 'updated_by'),
+    ('purchases', 'updated_by_name_snapshot'),
     ('purchases', 'created_at'),
     ('purchases', 'updated_at'),
     ('history_events', 'id'),
@@ -204,6 +225,7 @@ WITH expected(table_name, column_name) AS (
     ('material_requests', 'requester_id'),
     ('material_requests', 'site_id'),
     ('material_requests', 'status'),
+    ('material_requests', 'remark'),
     ('material_requests', 'created_at'),
     ('material_requests', 'updated_at'),
     ('material_request_items', 'id'),
@@ -217,14 +239,19 @@ WITH expected(table_name, column_name) AS (
     ('admin_messages', 'firebase_id'),
     ('admin_messages', 'title'),
     ('admin_messages', 'body'),
+    ('admin_messages', 'title_template'),
+    ('admin_messages', 'body_template'),
     ('admin_messages', 'recipient_mode'),
     ('admin_messages', 'created_by'),
     ('admin_messages', 'created_at'),
     ('message_recipients', 'message_id'),
     ('message_recipients', 'profile_id'),
+    ('message_recipients', 'recipient_name_snapshot'),
+    ('message_recipients', 'recipient_email_snapshot'),
     ('message_reads', 'message_id'),
     ('message_reads', 'profile_id'),
-    ('message_reads', 'read_at')
+    ('message_reads', 'read_at'),
+    ('message_reads', 'is_synthetic_timestamp')
 )
 SELECT e.table_name,
        e.column_name,
@@ -259,7 +286,7 @@ ORDER BY c.relname;
 SELECT t.table_name, 'MISSING_PRIMARY_KEY' AS status
 FROM information_schema.tables t
 WHERE t.table_schema = 'public' AND t.table_type = 'BASE TABLE'
-  AND t.table_name IN ('profiles','app_settings','material_codes','sites','outs','articles','article_returns','purchases','history_events','trash_entries','out_deletion_limits','material_requests','material_request_items','admin_messages','message_recipients','message_reads')
+  AND t.table_name IN ('profiles','app_settings','material_codes','sites','site_unlock_protections','outs','articles','article_returns','purchases','history_events','trash_entries','out_deletion_limits','material_requests','material_request_items','admin_messages','message_recipients','message_reads')
   AND NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_constraint con
     WHERE con.conrelid = format('%I.%I', t.table_schema, t.table_name)::regclass
@@ -334,6 +361,27 @@ JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public' AND con.contype = 'c'
 ORDER BY c.relname, con.conname;
 
+-- EXPECTED RESULT: no rows. The preservation table must retain its complete
+-- identity, ownership links, uniqueness, and bounded legacy counter contract.
+WITH expected(constraint_name, constraint_type) AS (
+  VALUES
+    ('site_unlock_protections_pkey', 'p'),
+    ('site_unlock_protections_site_id_fkey', 'f'),
+    ('site_unlock_protections_profile_id_fkey', 'f'),
+    ('site_unlock_protections_site_profile_key', 'u'),
+    ('site_unlock_protections_attempts_range', 'c')
+)
+SELECT e.constraint_name, e.constraint_type, 'MISSING_CONSTRAINT' AS status
+FROM expected e
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM pg_catalog.pg_constraint con
+  WHERE con.conrelid = 'public.site_unlock_protections'::regclass
+    AND con.conname = e.constraint_name
+    AND con.contype = e.constraint_type::"char"
+)
+ORDER BY e.constraint_name;
+
 -- ==================================================
 -- 09. INDEXES
 -- ==================================================
@@ -344,8 +392,9 @@ ORDER BY tablename, indexname;
 
 -- EXPECTED RESULT: no rows (each required leading-column index exists).
 WITH required(table_name, column_name) AS (
-  VALUES ('outs','site_id'), ('articles','out_id'), ('articles','site_id'),
-         ('article_returns','article_id'), ('purchases','site_id'),
+  VALUES ('sites','unlocked_by'), ('site_unlock_protections','site_id'),
+         ('site_unlock_protections','profile_id'), ('outs','site_id'), ('articles','out_id'), ('articles','site_id'),
+         ('article_returns','article_id'), ('purchases','site_id'), ('purchases','updated_by'),
          ('history_events','created_at'), ('history_events','site_id'),
          ('trash_entries','expires_at'), ('material_request_items','request_id'),
          ('message_recipients','profile_id'), ('message_reads','profile_id')
@@ -366,14 +415,14 @@ ORDER BY r.table_name, r.column_name;
 -- ==================================================
 -- 10. RLS
 -- ==================================================
--- EXPECTED RESULT: ENABLED on all 16 tables; disabled is CRITICAL.
+-- EXPECTED RESULT: ENABLED on all 17 tables; disabled is CRITICAL.
 SELECT c.relname AS table_name,
        c.relrowsecurity AS rls_enabled,
        CASE WHEN c.relrowsecurity THEN 'OK' ELSE 'CRITICAL' END AS status
 FROM pg_catalog.pg_class c
 JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
-  AND c.relname IN ('profiles','app_settings','material_codes','sites','outs','articles','article_returns','purchases','history_events','trash_entries','out_deletion_limits','material_requests','material_request_items','admin_messages','message_recipients','message_reads')
+  AND c.relname IN ('profiles','app_settings','material_codes','sites','site_unlock_protections','outs','articles','article_returns','purchases','history_events','trash_entries','out_deletion_limits','material_requests','material_request_items','admin_messages','message_recipients','message_reads')
 ORDER BY c.relname;
 
 -- ==================================================
@@ -405,7 +454,7 @@ ORDER BY tablename, policyname;
 -- 12. MATRICE POLICIES
 -- ==================================================
 WITH expected(table_name) AS (
-  SELECT unnest(ARRAY['profiles','app_settings','material_codes','sites','outs','articles','article_returns','purchases','history_events','trash_entries','out_deletion_limits','material_requests','material_request_items','admin_messages','message_recipients','message_reads']::text[])
+  SELECT unnest(ARRAY['profiles','app_settings','material_codes','sites','site_unlock_protections','outs','articles','article_returns','purchases','history_events','trash_entries','out_deletion_limits','material_requests','material_request_items','admin_messages','message_recipients','message_reads']::text[])
 )
 SELECT e.table_name,
        count(*) FILTER (WHERE p.cmd IN ('SELECT','ALL')) AS select_policy_count,
@@ -461,7 +510,8 @@ ORDER BY table_name;
 -- ==================================================
 -- EXPECTED RESULT: no freely granted authenticated UPDATE on protected profile columns.
 WITH protected(column_name) AS (
-  VALUES ('role'),('legacy_role'),('firebase_id'),('firebase_uid'),
+  VALUES ('role'),('legacy_role'),('legacy_status'),('legacy_approved'),('legacy_pending'),
+         ('firebase_id'),('firebase_uid'),
          ('maintenance_authorized'),('maintenance_access')
 )
 SELECT p.column_name,

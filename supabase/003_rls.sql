@@ -78,6 +78,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.material_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_unlock_protections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.outs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.article_returns ENABLE ROW LEVEL SECURITY;
@@ -95,6 +96,7 @@ ALTER TABLE public.message_reads ENABLE ROW LEVEL SECURITY;
 -- available to anon; maintenance is evaluated after authentication in the current UI.
 REVOKE ALL ON TABLE
   public.profiles, public.app_settings, public.material_codes, public.sites,
+  public.site_unlock_protections,
   public.outs, public.articles, public.article_returns, public.purchases,
   public.history_events, public.trash_entries, public.out_deletion_limits,
   public.material_requests, public.material_request_items, public.admin_messages,
@@ -171,6 +173,14 @@ GRANT INSERT (name, owner_id, created_by, created_by_name_snapshot, created_by_e
 ON public.sites TO authenticated;
 
 -- Legacy locking columns are intentionally neither granted nor used for authorization.
+
+-- SITE UNLOCK PROTECTIONS are migration evidence, not an authorization source.
+-- Privileged users may inspect preserved rows; no client role receives a write grant.
+CREATE POLICY site_unlock_protections_select_privileged
+ON public.site_unlock_protections FOR SELECT TO authenticated
+USING (public.is_privileged_admin());
+
+GRANT SELECT ON public.site_unlock_protections TO authenticated;
 
 -- OUTS inherit visibility from their parent site. Limited users cannot bypass the
 -- daily deletion counter with direct DELETE; privileged administrators are not counted
@@ -483,8 +493,8 @@ ON public.material_requests FOR DELETE TO authenticated
 USING (public.can_manage_data() AND (requester_id = auth.uid() OR public.is_privileged_admin()));
 
 GRANT SELECT, DELETE ON public.material_requests TO authenticated;
-GRANT INSERT (request_title, requester_id, site_id, status) ON public.material_requests TO authenticated;
-GRANT UPDATE (request_title, site_id, status) ON public.material_requests TO authenticated;
+GRANT INSERT (request_title, requester_id, site_id, status, remark) ON public.material_requests TO authenticated;
+GRANT UPDATE (request_title, site_id, status, remark) ON public.material_requests TO authenticated;
 
 CREATE POLICY material_request_items_select_parent
 ON public.material_request_items FOR SELECT TO authenticated

@@ -32,6 +32,12 @@ CREATE TABLE public.profiles (
   avatar_url TEXT,
   role public.app_role NOT NULL DEFAULT 'limited',
   legacy_role TEXT,
+  legacy_status TEXT,
+  legacy_approved BOOLEAN,
+  legacy_pending BOOLEAN,
+  presence TEXT,
+  online BOOLEAN,
+  last_seen_at TIMESTAMPTZ,
   maintenance_authorized BOOLEAN NOT NULL DEFAULT FALSE,
   maintenance_access BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -49,6 +55,18 @@ COMMENT ON COLUMN public.profiles.firebase_id IS
   'Original Firestore users/{uid} document ID. Usually equal to firebase_uid, but retained separately for explicit document mapping.';
 COMMENT ON COLUMN public.profiles.legacy_role IS
   'Original Firebase role spelling retained during migration; remove after role mapping validation.';
+COMMENT ON COLUMN public.profiles.legacy_status IS
+  'Legacy Firebase status retained for migration evidence only; it is not an authorization source.';
+COMMENT ON COLUMN public.profiles.legacy_approved IS
+  'Legacy Firebase approved flag retained for migration evidence only; it is not an authorization source.';
+COMMENT ON COLUMN public.profiles.legacy_pending IS
+  'Legacy Firebase pending flag retained for migration evidence only; it is not an authorization source.';
+COMMENT ON COLUMN public.profiles.presence IS
+  'Legacy Firebase presence value retained without assigning new business semantics.';
+COMMENT ON COLUMN public.profiles.online IS
+  'Legacy Firebase online value retained without assigning new business semantics.';
+COMMENT ON COLUMN public.profiles.last_seen_at IS
+  'Legacy Firebase lastSeen/lastSeenAt timestamp retained without assigning new business semantics.';
 
 -- Source Firebase: appSettings/maintenance and appSettings/trash.
 CREATE TABLE public.app_settings (
@@ -92,12 +110,15 @@ CREATE TABLE public.sites (
   locked_at TIMESTAMPTZ,
   locked_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   locked_by_name_snapshot TEXT,
+  unlocked_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  unlocked_by_name_snapshot TEXT,
   unlock_attempts_remaining INTEGER,
   unlock_blocked_until TIMESTAMPTZ,
   inactive_since TIMESTAMPTZ,
   inactivity_decision_pending BOOLEAN NOT NULL DEFAULT FALSE,
   inactivity_decision_pending_at TIMESTAMPTZ,
   inactivity_restored_at TIMESTAMPTZ,
+  imported_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT sites_firebase_id_key UNIQUE (firebase_id),
@@ -114,6 +135,27 @@ COMMENT ON COLUMN public.sites.unlock_attempts_remaining IS
   'Legacy frontend lock state retained for migration parity; it should later be replaced or removed.';
 COMMENT ON COLUMN public.sites.unlock_blocked_until IS
   'Legacy frontend lock state retained for migration parity; it should later be replaced or removed.';
+COMMENT ON COLUMN public.sites.unlocked_by IS
+  'Historical unlock actor reference retained for migration only; it does not define authorization.';
+COMMENT ON COLUMN public.sites.unlocked_by_name_snapshot IS
+  'Historical unlock actor name snapshot retained for migration only; it does not define authorization.';
+
+-- Legacy Firebase source: sites.unlockProtections
+-- Migration preservation table.
+-- This table does not itself define authorization.
+CREATE TABLE public.site_unlock_protections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id UUID NOT NULL REFERENCES public.sites(id) ON DELETE RESTRICT,
+  profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT,
+  attempts_remaining INTEGER NOT NULL,
+  blocked_until TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT site_unlock_protections_site_profile_key UNIQUE (site_id, profile_id),
+  CONSTRAINT site_unlock_protections_attempts_range CHECK (
+    attempts_remaining >= 0 AND attempts_remaining <= 3
+  )
+);
 
 -- Source Firebase: pages/page2/items/{itemId}.
 -- Relation: a business OUT belongs to one site; deletion is restricted for trash/restore workflows.
@@ -129,6 +171,7 @@ CREATE TABLE public.outs (
   article_count_legacy INTEGER,
   created_by_name_snapshot TEXT,
   created_by_email_snapshot TEXT,
+  imported_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT outs_firebase_id_key UNIQUE (firebase_id),
@@ -165,6 +208,7 @@ CREATE TABLE public.articles (
   created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_by_name_snapshot TEXT,
   created_by_email_snapshot TEXT,
+  imported_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT articles_firebase_id_key UNIQUE (firebase_id),
@@ -218,6 +262,9 @@ CREATE TABLE public.purchases (
   created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_by_name_snapshot TEXT,
   created_by_email_snapshot TEXT,
+  site_name_snapshot TEXT,
+  updated_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  updated_by_name_snapshot TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT purchases_site_firebase_id_key UNIQUE (site_id, firebase_id),
@@ -274,6 +321,7 @@ CREATE TABLE public.out_deletion_limits (
 );
 
 -- Source Firebase: materialRequests/{requestId}.
+-- Legacy rows may not contain requester/site/status.
 CREATE TABLE public.material_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   firebase_id TEXT,
@@ -281,10 +329,14 @@ CREATE TABLE public.material_requests (
   requester_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   site_id UUID REFERENCES public.sites(id) ON DELETE RESTRICT,
   status TEXT,
+  remark TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT material_requests_firebase_id_key UNIQUE (firebase_id)
 );
+
+COMMENT ON TABLE public.material_requests IS
+  'Legacy rows may not contain requester/site/status.';
 
 -- Relation: normalized representation of materialRequests.items[].
 -- CASCADE is safe here because an item has no meaning outside its request.
@@ -307,6 +359,8 @@ CREATE TABLE public.admin_messages (
   firebase_id TEXT,
   title TEXT,
   body TEXT,
+  title_template TEXT,
+  body_template TEXT,
   recipient_mode TEXT,
   created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -318,6 +372,8 @@ CREATE TABLE public.admin_messages (
 CREATE TABLE public.message_recipients (
   message_id UUID NOT NULL REFERENCES public.admin_messages(id) ON DELETE CASCADE,
   profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT,
+  recipient_name_snapshot TEXT,
+  recipient_email_snapshot TEXT,
   PRIMARY KEY (message_id, profile_id)
 );
 
@@ -327,6 +383,7 @@ CREATE TABLE public.message_reads (
   message_id UUID NOT NULL REFERENCES public.admin_messages(id) ON DELETE CASCADE,
   profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT,
   read_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  is_synthetic_timestamp BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (message_id, profile_id)
 );
 
@@ -340,7 +397,10 @@ CREATE INDEX app_settings_updated_by_idx ON public.app_settings (updated_by);
 CREATE INDEX sites_owner_id_idx ON public.sites (owner_id);
 CREATE INDEX sites_created_by_idx ON public.sites (created_by);
 CREATE INDEX sites_locked_by_idx ON public.sites (locked_by);
+CREATE INDEX sites_unlocked_by_idx ON public.sites (unlocked_by);
 CREATE INDEX sites_created_at_idx ON public.sites (created_at);
+CREATE INDEX site_unlock_protections_site_id_idx ON public.site_unlock_protections (site_id);
+CREATE INDEX site_unlock_protections_profile_id_idx ON public.site_unlock_protections (profile_id);
 CREATE INDEX outs_site_id_idx ON public.outs (site_id);
 CREATE INDEX outs_owner_id_idx ON public.outs (owner_id);
 CREATE INDEX outs_created_by_idx ON public.outs (created_by);
@@ -353,6 +413,7 @@ CREATE INDEX article_returns_article_id_idx ON public.article_returns (article_i
 CREATE INDEX article_returns_created_by_idx ON public.article_returns (created_by);
 CREATE INDEX purchases_site_id_idx ON public.purchases (site_id);
 CREATE INDEX purchases_created_by_idx ON public.purchases (created_by);
+CREATE INDEX purchases_updated_by_idx ON public.purchases (updated_by);
 CREATE INDEX purchases_created_at_idx ON public.purchases (created_at);
 CREATE INDEX history_events_actor_id_idx ON public.history_events (actor_id);
 CREATE INDEX history_events_site_id_idx ON public.history_events (site_id);
@@ -375,6 +436,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.material_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_unlock_protections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.outs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.article_returns ENABLE ROW LEVEL SECURITY;
