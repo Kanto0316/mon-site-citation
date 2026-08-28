@@ -119,8 +119,11 @@ WITH CHECK (
 
 CREATE POLICY profiles_update_self_or_management
 ON public.profiles FOR UPDATE TO authenticated
-USING ((id = auth.uid() AND public.can_manage_data()) OR public.is_privileged_admin())
-WITH CHECK ((id = auth.uid() AND public.can_manage_data()) OR public.is_privileged_admin());
+USING (id = auth.uid() OR public.is_privileged_admin())
+WITH CHECK (id = auth.uid() OR public.is_privileged_admin());
+
+-- Every authenticated role, including read_only, may maintain only its own
+-- non-privileged identity/activity columns listed in the column grant below.
 
 CREATE POLICY profiles_delete_management
 ON public.profiles FOR DELETE TO authenticated
