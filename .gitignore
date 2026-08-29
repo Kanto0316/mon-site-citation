@@ -1,0 +1,2 @@
+# Real Firebase migration exports contain user data and must remain local.
+migration/exports/
