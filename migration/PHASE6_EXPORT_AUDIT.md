@@ -27,7 +27,7 @@ Le fichier suivi `Exporter.2026-08-12_05-54-16.su` est un export partiel au form
 
 Les timestamps sont encodés sous la forme `{ "__type": "firestore_timestamp", "seconds": <entier>, "nanoseconds": <0..999999999> }`. Les entiers hors de la plage sûre JavaScript, octets, références et points géographiques utilisent également un objet `__type`. Les maps, tableaux, valeurs `null`, `false`, `0`, chaînes vides, champs legacy et snapshots restent inchangés. La normalisation reste exclusivement dans le dry-run.
 
-Le manifeste inventorie chaque source avec `collection`, `documents_count`, `subcollections_count` et `export_status` (`EXPORTED`, `EMPTY`, `FAILED`, `NOT_ACCESSIBLE`). Une erreur d’accès arrête l’export et ne peut donc pas être confondue avec une collection vide. Toutes les lectures sont paginées.
+Le manifeste inventorie chaque source avec `collection`, `documents_count`, `subcollections_count` et `export_status` (`EXPORTED`, `EMPTY`, `FAILED`, `NOT_ACCESSIBLE`). Les singletons `appSettings/maintenance` et `appSettings/trash` ont chacun une entrée d’inventaire, afin que l’absence de l’un ne soit pas masquée par la présence de l’autre. Une erreur d’accès arrête l’export et ne peut donc pas être confondue avec une collection vide. Toutes les lectures sont paginées.
 
 Le fichier est créé avec le mode `0600`, sans écrasement, puis son SHA-256 est écrit dans un fichier local `.sha256`. Le hash ne peut pas être inclus dans le fichier qu’il hash sans devenir autoréférentiel; le dry-run le recalcule et l’inscrit dans son rapport.
 
@@ -35,4 +35,4 @@ Le fichier est créé avec le mode `0600`, sans écrasement, puis son SHA-256 es
 
 L’outil utilise exclusivement des requêtes HTTP `GET`. Un garde statique échoue si une primitive d’écriture Firebase est introduite. Il ne contacte jamais Supabase. L’accès Firebase vient uniquement de `FIREBASE_ACCESS_TOKEN` ou d’Application Default Credentials indiqué par `GOOGLE_APPLICATION_CREDENTIALS`; aucune valeur ni aucun jeton n’est journalisé.
 
-Les champs dont le nom exact est sensible (`password`, `loginMemo`, jetons, clé privée, compte de service, `service_role`) font échouer l’export plutôt que d’être copiés. Les documents Firestore `users/{uid}` ne sont pas Firebase Authentication : `FIREBASE_AUTH_EXPORT_REQUIRED = YES`, mais l’export Auth est une phase séparée.
+Les champs dont le nom exact est sensible (`password`, `loginMemo`, jetons, clé privée, compte de service, `service_role`) font échouer l’export plutôt que d’être copiés. Les documents Firestore `users/{uid}` ne sont pas Firebase Authentication : le manifeste indique explicitement `FIREBASE_AUTH_EXPORT_REQUIRED = YES` et `FIREBASE_AUTH_EXPORTED = NO`; l’export Auth est une phase séparée.
