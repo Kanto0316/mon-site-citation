@@ -11,7 +11,7 @@ const VERSION = 1;
 const PAGE_SIZE = 300;
 const FORBIDDEN_SOURCE_OPERATIONS = /\b(setDoc|addDoc|updateDoc|deleteDoc|writeBatch|runTransaction|commit|batchWrite)\b/;
 const REQUIRED = Object.freeze([
-  'users', 'appSettings', 'page1', 'page2', 'page3', 'materialCodes',
+  'users', 'appSettings/maintenance', 'appSettings/trash', 'page1', 'page2', 'page3', 'materialCodes',
   'historiques', 'trash', 'purchasesBySite', 'materialRequests',
   'adminMessages', 'outDeletionLimitsByUser',
 ]);
@@ -121,6 +121,18 @@ async function buildExport(projectId, token) {
   const inventory = {};
   const collections = {};
   for (const name of ['users', 'appSettings', 'materialCodes', 'historiques', 'trash', 'materialRequests', 'adminMessages']) collections[name] = await safeRead(projectId, token, name, name, inventory);
+  // Inventory both required singleton documents independently. Otherwise one
+  // present setting could hide the absence of the other setting.
+  for (const document of ['maintenance', 'trash']) {
+    const present = Object.hasOwn(collections.appSettings, document);
+    inventory[`appSettings/${document}`] = {
+      collection: `appSettings/${document}`,
+      documents_count: present ? 1 : 0,
+      subcollections_count: 0,
+      export_status: present ? 'EXPORTED' : 'EMPTY',
+    };
+  }
+  delete inventory.appSettings;
   for (const page of ['page1', 'page2', 'page3']) collections[page] = await safeRead(projectId, token, page, `pages/${page}/items`, inventory);
   const siteParents = await safeRead(projectId, token, '_sites_parents', 'sites', inventory);
   collections.purchasesBySite = {};
@@ -132,7 +144,7 @@ async function buildExport(projectId, token) {
   for (const uid of Object.keys(collections.users)) { const docs = await listCollection(projectId, token, `users/${uid}/outDeletionLimits`); collections.outDeletionLimitsByUser[uid] = docs; limitCount += Object.keys(docs).length; }
   inventory.outDeletionLimitsByUser = { collection: 'users/{uid}/outDeletionLimits', documents_count: limitCount, subcollections_count: Object.keys(collections.users).length, export_status: limitCount ? 'EXPORTED' : 'EMPTY' };
   delete inventory._sites_parents;
-  return { format: FORMAT, version: VERSION, exportedAt: new Date().toISOString(), firebaseAuthExportRequired: true, manifest: { FIREBASE_AUTH_EXPORT_REQUIRED: 'YES', read_only: true, inventory }, collections };
+  return { format: FORMAT, version: VERSION, exportedAt: new Date().toISOString(), firebaseAuthExportRequired: true, firebaseAuthExported: false, manifest: { FIREBASE_AUTH_EXPORT_REQUIRED: 'YES', FIREBASE_AUTH_EXPORTED: 'NO', read_only: true, inventory }, collections };
 }
 
 function writeExport(output, data) {
@@ -150,7 +162,7 @@ function selfTest() {
   const decoded = decodeFields({ zero:{integerValue:'0'}, no:{booleanValue:false}, empty:{stringValue:''}, nil:{nullValue:null}, when:{timestampValue:'2026-01-02T03:04:05.123456789Z'}, list:{arrayValue:{values:[]}} });
   if (decoded.zero !== 0 || decoded.no !== false || decoded.empty !== '' || decoded.nil !== null || decoded.when.nanoseconds !== 123456789 || !Array.isArray(decoded.list)) throw new Error('Test de sérialisation lossless échoué.');
   try { decodeFields({ password:{stringValue:'x'} }); throw new Error('Le filtre secret a échoué.'); } catch (error) { if (!String(error.message).startsWith('SENSITIVE_FIELD_REFUSED')) throw error; }
-  console.log('EXPORT_SELF_TESTS = PASSED\nREAD_ONLY = YES\nFIREBASE_AUTH_EXPORT_REQUIRED = YES');
+  console.log('EXPORT_SELF_TESTS = PASSED\nREAD_ONLY = YES\nFIREBASE_AUTH_EXPORT_REQUIRED = YES\nFIREBASE_AUTH_EXPORTED = NO');
 }
 
 async function main() {
@@ -161,7 +173,7 @@ async function main() {
   const data = await buildExport(args.projectId, token);
   for (const name of REQUIRED) if (!data.manifest.inventory[name] || ['FAILED', 'NOT_ACCESSIBLE'].includes(data.manifest.inventory[name].export_status)) throw new Error(`EXPORT_INCOMPLETE: ${name}`);
   const result = writeExport(args.output, data);
-  console.log(`export_file = ${result.target}\nsource_sha256 = ${result.hash}\nREAD_ONLY = YES\nFIREBASE_AUTH_EXPORT_REQUIRED = YES`);
+  console.log(`export_file = ${result.target}\nsource_sha256 = ${result.hash}\nREAD_ONLY = YES\nFIREBASE_AUTH_EXPORT_REQUIRED = YES\nFIREBASE_AUTH_EXPORTED = NO`);
 }
 
 main().catch(error => { console.error(`EXPORT_ERROR: ${error.message}`); process.exitCode = 1; });
